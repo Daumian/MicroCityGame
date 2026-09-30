@@ -110,7 +110,7 @@ function generarCiudad() {
     const residentes = [];
     for (let k = 0; k < cantidad; k++) {
       residentes.push({ id: "r" + contador++, nombre: nombres.pop(), edad: azar(RESIDENTES.edades),
-        casa: i, tags: mezclar(RESIDENTES.tags).slice(0, 2), relaciones: {} });
+        casa: i, tags: mezclar(RESIDENTES.tags).slice(0, 2), relaciones: {}, cara: sortearCara() });
     }
     return { i, tipo, nombre: "Casa de " + residentes[0].nombre, residentes };
   });
@@ -290,6 +290,39 @@ function dibujarHistorial() {
   ).join("");
 }
 
+// ====== CARAS PIXELADAS ======
+const PIELES = ["#f7d6b0", "#e8b98a", "#c68c5a", "#8d5a3b"];
+const PELOS = ["#2b1b12", "#6b4423", "#d9a441", "#b5442e", "#3a3a3a"];
+const ROPAS = ["#ffc812", "#009fe3", "#22ad4a", "#ff4f4f", "#8a5cd6"];
+const sortearCara = () => ({ piel: azar(PIELES), pelo: azar(PELOS), ropa: azar(ROPAS),
+  estilo: Math.floor(Math.random() * 4), boca: Math.floor(Math.random() * 3) });
+
+function caraPixelada(r) {
+  const c = r.cara, N = 12, TINTA = "#1b1b24";
+  const g = Array.from({ length: N }, () => Array(N).fill(null));
+  const poner = (x, y, col) => { g[y][x] = col; };
+  const fila = (y, x1, x2, col) => { for (let x = x1; x <= x2; x++) poner(x, y, col); };
+  const nino = r.edad === "niño", viejo = r.edad === "anciano";
+  const top = nino ? 3 : 2;
+  const pelo = viejo ? "#e6e6e6" : c.pelo;
+  for (let y = top; y <= 10; y++) fila(y, 2, 9, c.piel);       // cabeza
+  fila(11, 3, 8, c.ropa);                                       // remera
+  const estilo = c.estilo === 2 && nino ? 0 : c.estilo;        // los pelados solo de grandes
+  if (estilo !== 2) { fila(top, 2, 9, pelo); fila(top + 1, 2, 9, pelo); }
+  else { fila(top + 2, 2, 2, pelo); fila(top + 2, 9, 9, pelo); }
+  if (estilo === 1) for (let y = top + 2; y <= 9; y++) { poner(2, y, pelo); poner(9, y, pelo); }
+  if (estilo === 3) fila(top - 1, 3, 8, pelo);
+  const ojoY = top + 3;                                         // ojos
+  poner(4, ojoY, TINTA); poner(7, ojoY, TINTA);
+  if (nino) { poner(4, ojoY + 1, TINTA); poner(7, ojoY + 1, TINTA); poner(3, 8, "#ff9bb0"); poner(8, 8, "#ff9bb0"); }
+  if (viejo) { poner(3, 8, "#00000033"); poner(8, 8, "#00000033"); poner(4, ojoY - 1, "#c9c9c9"); poner(7, ojoY - 1, "#c9c9c9"); }
+  if (c.boca === 0) { poner(4, 8, TINTA); poner(7, 8, TINTA); fila(9, 5, 6, TINTA); }          // sonrisa
+  else if (c.boca === 1) fila(9, 4, 7, TINTA);                                                  // seria
+  else { fila(8, 5, 6, "#c0392b"); fila(9, 5, 6, "#c0392b"); }                                  // boca abierta
+  const rects = g.map((f, y) => f.map((col, x) => col ? `<rect x="${x}" y="${y}" width="1" height="1" fill="${col}"/>` : "").join("")).join("");
+  return `<svg class="cara" viewBox="0 0 ${N} ${N}" shape-rendering="crispEdges" role="img" aria-label="Cara de ${r.nombre}">${rects}</svg>`;
+}
+
 const tagsHTML = (tags) => `<div class="tags">${tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>`;
 
 function mostrarFicha(lugar) {
@@ -300,8 +333,9 @@ function mostrarFicha(lugar) {
   else if (lugar.tipo === "casa") lugar.residentes.forEach((r) => {
     const rels = todosLosResidentes().filter((o) => o.id !== r.id).map((o) => {
       const v = getRel(r, o); return `<span class="tag">${o.nombre} ${v} ${etiquetaRel(v).emoji}</span>`; }).join("");
-    html += `<div class="residente"><p><strong>${r.nombre}</strong> (${r.edad})</p>${tagsHTML(r.tags)}
-      <p class="vacio" style="margin-top:8px">Relaciones:</p><div class="tags">${rels}</div></div>`; });
+    html += `<div class="residente"><div class="retrato">${caraPixelada(r)}</div><div class="datos">
+      <p><strong>${r.nombre}</strong> (${r.edad})</p>${tagsHTML(r.tags)}
+      <p class="vacio" style="margin-top:8px">Relaciones:</p><div class="tags">${rels}</div></div></div>`; });
   else html += `<p style="margin-top:8px">Acá se cruzan los vecinos de las 4 casas 🗣️</p>`;
   ficha.innerHTML = html;
 }
