@@ -17,14 +17,14 @@ body { margin: 0; background: var(--fondo); color: var(--tinta);
   font-family: "Pixelify Sans", "Courier New", monospace; font-size: 18px; line-height: 1.4; }
 .juego { max-width: 1280px; margin: 0 auto; padding: 20px; display: grid; gap: 20px; align-items: start;
   grid-template-columns: minmax(260px, 1fr) minmax(320px, 1.1fr) minmax(260px, 1fr);
-  grid-template-rows: auto 1fr;
-  grid-template-areas: "ficha ciudad historial" "ficha evento historial"; }
-#ficha { grid-area: ficha; } #panel-ciudad { grid-area: ciudad; } #panel-evento { grid-area: evento; } #panel-historial { grid-area: historial; }
-/* pantallas medianas: mapa y evento arriba, gente e historial abajo */
-@media (max-width: 1000px) { .juego { grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto; grid-template-areas: "ciudad evento" "ficha historial"; } }
-@media (max-width: 680px) { .juego { grid-template-columns: 1fr;
-  grid-template-rows: auto; grid-template-areas: "ciudad" "evento" "ficha" "historial"; } }
+  grid-template-areas: "ficha ciudad derecha"; }
+#ficha { grid-area: ficha; } #panel-ciudad { grid-area: ciudad; } .derecha { grid-area: derecha; display: flex; flex-direction: column; gap: 20px; }
+/* pantallas medianas: mapa y evento/historial arriba, gente abajo */
+@media (max-width: 1000px) { .juego { grid-template-columns: 1fr 1fr; grid-template-areas: "ciudad derecha" "ficha ficha"; } }
+/* celular: mapa, evento, gente, historial */
+@media (max-width: 680px) { .juego { grid-template-columns: 1fr; grid-template-areas: none; }
+  .derecha { display: contents; } #ficha, #panel-ciudad { grid-area: auto; }
+  #panel-ciudad { order: 1; } #panel-evento { order: 2; } #ficha { order: 3; } #panel-historial { order: 4; } }
 .columna { display: flex; flex-direction: column; gap: 20px; }
 .panel { background: var(--papel); border: 4px solid var(--borde); box-shadow: 6px 6px 0 var(--borde); padding: 16px; }
 h1 { font-size: 28px; margin: 0; font-weight: 700; }
@@ -111,3 +111,8 @@ button.btn-filtro { padding: 2px 6px; box-shadow: 3px 3px 0 var(--borde); vertic
 .ficha .cabecera { margin-bottom: 4px; }
 
 .pips { letter-spacing: 1px; font-size: 12px; color: var(--negocio); }
+
+/* cada residente se puede plegar */
+details.residente { display: block; border-top: 4px dotted var(--suave); padding-top: 10px; margin-top: 10px; }
+details.residente > summary { cursor: pointer; font-size: 18px; margin-bottom: 8px; }
+details.residente > .cuerpo { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
