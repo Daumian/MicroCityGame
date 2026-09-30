@@ -86,8 +86,10 @@ function aplicarConsecuencias(inst, c = {}) {
     relaciones[claveRel(inst.residente, inst.otro)] = despues;
     const e1 = etiquetaRel(antes), e2 = etiquetaRel(despues);
     const quienes = `${inst.residente.nombre} y ${inst.otro.nombre}`;
-    if (e1.nombre !== e2.nombre) msgs.push(`${e2.emoji} ${quienes} ${FRASE_REL[e2.nombre]} (${despues})`);
-    else msgs.push(`${c.relacion > 0 ? "▲" : "▼"} ${quienes}: relación ${antes} → ${despues}`);
+    const fuerte = Math.abs(despues - antes) >= 15;
+    const signo = c.relacion > 0 ? `<span class="sube">${fuerte ? "++" : "+"}</span>` : `<span class="baja">${fuerte ? "−−" : "−"}</span>`;
+    if (e1.nombre !== e2.nombre) msgs.push(`${e2.emoji} ${quienes} ${FRASE_REL[e2.nombre]} ${signo}`);
+    else msgs.push(`${signo} ${quienes}: relación`);
   }
   return msgs;
 }
