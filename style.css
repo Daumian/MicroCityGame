@@ -94,3 +94,11 @@ button.accion:focus-visible { outline: 3px solid var(--negocio); outline-offset:
 .sube, .baja { font-weight: 700; }
 .sube { color: #1f9d48; }
 .baja { color: #e03a3a; }
+
+/* acordeón de relaciones y embudo del historial */
+.rel-titulo { font-size: 14px; margin: 6px 0 4px !important; }
+details.mas { margin-top: 8px; }
+details.mas summary { cursor: pointer; color: var(--suave); font-weight: 600; margin-bottom: 6px; }
+button.btn-filtro { padding: 2px 6px; box-shadow: 3px 3px 0 var(--borde); vertical-align: middle; text-align: center; }
+.embudo { width: 14px; height: 12px; display: block; }
+.ficha .cabecera { margin-bottom: 4px; }

@@ -45,7 +45,7 @@
       "otro": [],
       "relacion_min": 60
     },
-    "texto": "{residente} y {otro} compartieron unos mates en la plaza 🧉",
+    "texto": "{residente} y {otro} compartieron unos mates en la plaza 🍵",
     "consecuencias": {
       "relacion": 5
     }
