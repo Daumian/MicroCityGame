@@ -223,9 +223,13 @@
       {
         "texto": "¡A plantar tomates!",
         "consecuencias": {
-          "negocio_agrega": [
-            "huerta"
-          ]
+          "negocio_transforma": {
+            "nombre": "Huerta comunitaria",
+            "tags": [
+              "huerta",
+              "naturaleza"
+            ]
+          }
         }
       },
       {
@@ -359,7 +363,11 @@
     "opciones": [
       {
         "texto": "Que llame a los bomberos 🚒",
-        "consecuencias": {}
+        "consecuencias": {
+          "residente_agrega": [
+            "generoso"
+          ]
+        }
       },
       {
         "texto": "Que intente apagarlo con un balde",
@@ -367,9 +375,13 @@
           "residente_agrega": [
             "valiente"
           ],
-          "negocio_agrega": [
-            "chamuscado"
-          ]
+          "negocio_transforma": {
+            "nombre": "Ruinas de la fábrica",
+            "tags": [
+              "abandonado",
+              "chamuscado"
+            ]
+          }
         }
       }
     ]

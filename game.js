@@ -73,6 +73,12 @@ function aplicarConsecuencias(inst, c = {}) {
       msgs.push(`🏗️ El lugar ${inst.negocio.nombre} ahora ${frase(t)}`);
     });
     (c.negocio_quita || []).forEach((t) => { inst.negocio.tags = inst.negocio.tags.filter((x) => x !== t); });
+    if (c.negocio_transforma) {
+      const antes = inst.negocio.nombre;
+      inst.negocio.nombre = c.negocio_transforma.nombre;
+      inst.negocio.tags = [...c.negocio_transforma.tags];
+      msgs.push(`🏗️ ${antes} se transformó en ${inst.negocio.nombre}`);
+    }
   }
   if (c.relacion && inst.otro) {
     const antes = getRel(inst.residente, inst.otro);
@@ -187,7 +193,7 @@ function textoDe(inst) {
 }
 
 function registrar(inst) {
-  historial.unshift({ texto: textoDe(inst), eleccion: inst.eleccion, nivel: inst.nivel, dia: inst.dia, mensajes: inst.mensajes || [] });
+  historial.unshift({ texto: inst.textoFijo || textoDe(inst), eleccion: inst.eleccion, nivel: inst.nivel, dia: inst.dia, mensajes: inst.mensajes || [] });
   historial = historial.slice(0, 10);
 }
 
@@ -205,6 +211,7 @@ function seleccionar(i) {
 }
 
 function elegirOpcion(inst, op) {
+  inst.textoFijo = textoDe(inst);
   inst.estado = "resuelto";
   inst.eleccion = op.texto;
   inst.mensajes = aplicarConsecuencias(inst, op.consecuencias);
@@ -256,7 +263,7 @@ function dibujarEvento() {
 
   const marca = marcaDe(elegido);
   cont.className = marca === "gris" ? "gastado" : "";
-  cont.innerHTML = `<span class="chip ${marca}">${NOMBRE_NIVEL[marca]}</span><p class="evento-texto">${textoDe(inst)}</p>`;
+  cont.innerHTML = `<span class="chip ${marca}">${NOMBRE_NIVEL[marca]}</span><p class="evento-texto">${inst.textoFijo || textoDe(inst)}</p>`;
 
   if (inst.estado === "nuevo" && inst.nivel !== "verde") {
     const ops = document.createElement("div");
