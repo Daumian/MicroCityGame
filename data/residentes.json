@@ -30,7 +30,10 @@
     "gruñon",
     "huerta",
     "lectura",
-    "musica"
+    "musica",
+    "gracioso",
+    "valiente",
+    "generoso"
   ],
   "intereses": [
     "cocina",
@@ -41,5 +44,14 @@
     "huerta",
     "lectura",
     "musica"
+  ],
+  "personalidad": [
+    "le_gusta_hablar",
+    "gruñon",
+    "generoso",
+    "valiente",
+    "gracioso",
+    "mala_fama",
+    "inventor"
   ]
 }
