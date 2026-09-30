@@ -1,0 +1,432 @@
+[
+  {
+    "id": "chiste",
+    "nivel": "verde",
+    "lugar": "casa",
+    "requisitos": {
+      "residente": []
+    },
+    "texto": "{residente} contó un chiste malísimo 😅",
+    "consecuencias": {}
+  },
+  {
+    "id": "cocina_suyo",
+    "nivel": "verde",
+    "lugar": "casa",
+    "requisitos": {
+      "residente": [
+        "cocina"
+      ]
+    },
+    "texto": "{residente} decidió que la cocina es lo suyo.",
+    "consecuencias": {}
+  },
+  {
+    "id": "charlaron",
+    "nivel": "verde",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [
+        "le_gusta_hablar"
+      ],
+      "otro": []
+    },
+    "texto": "{residente} y {otro} charlaron un rato largo en la plaza.",
+    "consecuencias": {
+      "relacion": 8
+    }
+  },
+  {
+    "id": "mates",
+    "nivel": "verde",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [],
+      "otro": [],
+      "relacion_min": 60
+    },
+    "texto": "{residente} y {otro} compartieron unos mates en la plaza 🧉",
+    "consecuencias": {
+      "relacion": 5
+    }
+  },
+  {
+    "id": "se_evitan",
+    "nivel": "verde",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [],
+      "otro": [],
+      "relacion_max": 25
+    },
+    "texto": "{residente} cruzó de vereda para no saludar a {otro}.",
+    "consecuencias": {
+      "relacion": -3
+    }
+  },
+  {
+    "id": "pan_rico",
+    "nivel": "verde",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [],
+      "negocio": [
+        "comida"
+      ]
+    },
+    "texto": "El olor de la {negocio} despertó a {residente} de buen humor.",
+    "consecuencias": {}
+  },
+  {
+    "id": "patos",
+    "nivel": "verde",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [],
+      "negocio": [
+        "naturaleza"
+      ]
+    },
+    "texto": "{residente} se quedó mirando patos en el {negocio}.",
+    "consecuencias": {}
+  },
+  {
+    "id": "comida_tradicional",
+    "nivel": "amarillo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [
+        "historia"
+      ],
+      "negocio": [
+        "comida"
+      ]
+    },
+    "texto": "{residente} quiere que la {negocio} haga comida tradicional de antes.",
+    "opciones": [
+      {
+        "texto": "¡Dale, con la receta de la abuela!",
+        "consecuencias": {
+          "residente_agrega": [
+            "cocina"
+          ]
+        }
+      },
+      {
+        "texto": "Mejor no, que siga con lo de siempre",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "aprender_pesca",
+    "nivel": "amarillo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [],
+      "negocio": [
+        "pesca"
+      ]
+    },
+    "texto": "{residente} ve gente pescando en el {negocio}. ¿Le pica el bichito?",
+    "opciones": [
+      {
+        "texto": "Que se compre una caña",
+        "consecuencias": {
+          "residente_agrega": [
+            "pesca"
+          ]
+        }
+      },
+      {
+        "texto": "Nah, le dan asco los gusanos",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "robot_casero",
+    "nivel": "amarillo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [
+        "robotica"
+      ],
+      "negocio": [
+        "herramientas"
+      ]
+    },
+    "texto": "{residente} quiere herramientas del {negocio} para armar un robot.",
+    "opciones": [
+      {
+        "texto": "Que pregunte con respeto",
+        "consecuencias": {
+          "residente_agrega": [
+            "inventor"
+          ]
+        }
+      },
+      {
+        "texto": "Que se las lleve sin pedir 😬",
+        "consecuencias": {
+          "residente_agrega": [
+            "mala_fama"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "escalada_o_robotica",
+    "nivel": "amarillo",
+    "lugar": "casa",
+    "requisitos": {
+      "residente": [
+        "escalada",
+        "robotica"
+      ]
+    },
+    "texto": "{residente} está debatiendo entre hobbies: escalada o robótica.",
+    "opciones": [
+      {
+        "texto": "Escalada 🧗",
+        "consecuencias": {
+          "residente_quita": [
+            "robotica"
+          ]
+        }
+      },
+      {
+        "texto": "Robótica 🤖",
+        "consecuencias": {
+          "residente_quita": [
+            "escalada"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "baldio_huerta",
+    "nivel": "amarillo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [
+        "huerta"
+      ],
+      "negocio": [
+        "abandonado"
+      ]
+    },
+    "texto": "{residente} mira el {negocio} y piensa que ahí entraría una huerta enorme.",
+    "opciones": [
+      {
+        "texto": "¡A plantar tomates!",
+        "consecuencias": {
+          "negocio_agrega": [
+            "huerta"
+          ]
+        }
+      },
+      {
+        "texto": "Mejor no meterse en terreno ajeno",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "libros_biblioteca",
+    "nivel": "amarillo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [
+        "lectura"
+      ],
+      "negocio": [
+        "libros"
+      ]
+    },
+    "texto": "Hay muchos libros viejos en la {negocio}. {residente} propone qué hacer.",
+    "opciones": [
+      {
+        "texto": "Regalarlos en la plaza",
+        "consecuencias": {
+          "residente_agrega": [
+            "generoso"
+          ]
+        }
+      },
+      {
+        "texto": "Reciclarlos",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "musica_plaza",
+    "nivel": "amarillo",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [
+        "musica"
+      ],
+      "otro": []
+    },
+    "texto": "{residente} toca la guitarra en la plaza y {otro} se acerca a escuchar.",
+    "opciones": [
+      {
+        "texto": "Que lo invite a cantar",
+        "consecuencias": {
+          "otro_agrega": [
+            "musica"
+          ],
+          "relacion": 20
+        }
+      },
+      {
+        "texto": "Que siga tocando solo",
+        "consecuencias": {
+          "relacion": -5
+        }
+      }
+    ]
+  },
+  {
+    "id": "pesca_juntos",
+    "nivel": "amarillo",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [
+        "pesca"
+      ],
+      "otro": []
+    },
+    "texto": "{residente} invita a {otro} a pescar al amanecer.",
+    "opciones": [
+      {
+        "texto": "Que vaya, ¡a madrugar!",
+        "consecuencias": {
+          "otro_agrega": [
+            "pesca"
+          ],
+          "relacion": 15
+        }
+      },
+      {
+        "texto": "Que le diga que no",
+        "consecuencias": {
+          "relacion": -5
+        }
+      }
+    ]
+  },
+  {
+    "id": "rencor",
+    "nivel": "amarillo",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [],
+      "otro": [],
+      "relacion_max": 25
+    },
+    "texto": "{residente} sigue enojado con {otro} y se lo cruza en la plaza.",
+    "opciones": [
+      {
+        "texto": "Que le pida disculpas",
+        "consecuencias": {
+          "relacion": 25
+        }
+      },
+      {
+        "texto": "Que lo ignore",
+        "consecuencias": {
+          "relacion": -5
+        }
+      }
+    ]
+  },
+  {
+    "id": "incendio_fabrica",
+    "nivel": "rojo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [],
+      "negocio": [
+        "industria"
+      ]
+    },
+    "texto": "¡Sale humo de la {negocio}! {residente} lo vio primero.",
+    "opciones": [
+      {
+        "texto": "Que llame a los bomberos 🚒",
+        "consecuencias": {}
+      },
+      {
+        "texto": "Que intente apagarlo con un balde",
+        "consecuencias": {
+          "residente_agrega": [
+            "valiente"
+          ],
+          "negocio_agrega": [
+            "chamuscado"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "crecida_lago",
+    "nivel": "rojo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [],
+      "negocio": [
+        "pesca"
+      ]
+    },
+    "texto": "¡El {negocio} desbordó y el agua llega a la puerta de {residente}!",
+    "opciones": [
+      {
+        "texto": "Hacer una barrera con bolsas de arena",
+        "consecuencias": {
+          "residente_agrega": [
+            "valiente"
+          ]
+        }
+      },
+      {
+        "texto": "Mudar todo al primer piso",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "pelea_fuerte",
+    "nivel": "rojo",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [
+        "gruñon"
+      ],
+      "otro": []
+    },
+    "texto": "¡{residente} y {otro} se están por agarrar a piñas en la plaza!",
+    "opciones": [
+      {
+        "texto": "Separarlos",
+        "consecuencias": {
+          "relacion": -10
+        }
+      },
+      {
+        "texto": "Dejar que se arreglen solos",
+        "consecuencias": {
+          "relacion": -30,
+          "otro_agrega": [
+            "gruñon"
+          ]
+        }
+      }
+    ]
+  }
+]

@@ -1,0 +1,350 @@
+// ====== DATOS (se cargan desde /data) ======
+let NEGOCIOS = [], RESIDENTES = {}, EVENTOS = [], FRASE_TAG = {};
+
+// ====== CONFIG ======
+const DURACION_DIA = 12;                 // segundos reales que dura un día
+const EVENTOS_POR_DIA = [2, 4];          // mínimo y máximo
+const PESOS = { verde: 5, amarillo: 3, rojo: 1 };
+const pendientes = () => Object.values(eventos).filter((e) => e.estado === "nuevo").length;
+const NOMBRE_NIVEL = { verde: "Casual", amarillo: "Importante", rojo: "Urgente", gris: "Visto" };
+
+// ====== GRILLA ======
+// 0 1 2
+// 3 4 5
+// 6 7 8
+const TIPOS = ["negocio", "casa", "negocio", "casa", "plaza", "casa", "negocio", "casa", "negocio"];
+const VECINOS = { 0: [1, 3], 1: [0, 2], 2: [1, 5], 3: [0, 6], 4: [1, 3, 5, 7], 5: [2, 8], 6: [3, 7], 7: [6, 8], 8: [5, 7] };
+
+// ====== ESTADO ======
+let ciudad = [];
+let relaciones = {};  // "r1|r3" -> 0 a 100
+let eventos = {};      // lugar -> evento activo { ev, nivel, estado: "nuevo" | "visto" | "resuelto", ... }
+let elegido = null;
+let historial = [];
+let ultimoId = null;
+let dia = 1, reloj = 0, agenda = [];
+let pausado = false, bloqueado = false;
+
+// ====== HELPERS ======
+const azar = (lista) => lista[Math.floor(Math.random() * lista.length)];
+const mezclar = (lista) => [...lista].sort(() => Math.random() - 0.5);
+const tieneTodo = (tags, requeridos = []) => requeridos.every((t) => tags.includes(t));
+const todosLosResidentes = () => ciudad.filter((l) => l.tipo === "casa").flatMap((l) => l.residentes);
+const ocupado = (i) => eventos[i] && eventos[i].estado === "nuevo";
+
+// ====== RELACIONES ======
+const claveRel = (a, b) => [a.id, b.id].sort().join("|");
+const getRel = (a, b) => relaciones[claveRel(a, b)] ?? 50;
+function etiquetaRel(v) {
+  if (v < 20) return { nombre: "peleados", emoji: "😠" };
+  if (v < 40) return { nombre: "tensos", emoji: "😒" };
+  if (v < 60) return { nombre: "conocidos", emoji: "🙂" };
+  if (v < 80) return { nombre: "amigos", emoji: "💚" };
+  return { nombre: "inseparables", emoji: "💞" };
+}
+const FRASE_REL = { peleados: "ahora están peleados", tensos: "ahora están tensos", conocidos: "ahora se llevan normal",
+  amigos: "ahora son amigos", inseparables: "ahora son inseparables" };
+
+// ====== CONSECUENCIAS ======
+const frase = (tag) => FRASE_TAG[tag] || `tiene «${tag}»`;
+const conA = (nombre, f) => (f.startsWith("le ") ? `a ${nombre} ${f}` : `${nombre} ${f}`);
+
+function aplicarConsecuencias(inst, c = {}) {
+  const msgs = [];
+  const agregar = (quien, tags = []) => tags.forEach((t) => {
+    if (quien.tags.includes(t)) return;
+    quien.tags.push(t);
+    msgs.push(`✨ Ahora ${conA(quien.nombre, frase(t))}`);
+  });
+  const quitar = (quien, tags = []) => tags.forEach((t) => {
+    if (!quien.tags.includes(t)) return;
+    quien.tags = quien.tags.filter((x) => x !== t);
+    const f = conA(quien.nombre, frase(t)).replace(" le ", " ya no le ");
+    const txt = f.includes("ya no") ? f : f.replace(quien.nombre, quien.nombre + " ya no");
+    msgs.push(`💨 ${txt[0].toUpperCase() + txt.slice(1)}`);
+  });
+  agregar(inst.residente, c.residente_agrega);
+  quitar(inst.residente, c.residente_quita);
+  if (inst.otro) { agregar(inst.otro, c.otro_agrega); quitar(inst.otro, c.otro_quita); }
+  if (inst.negocio) {
+    (c.negocio_agrega || []).forEach((t) => {
+      if (inst.negocio.tags.includes(t)) return;
+      inst.negocio.tags.push(t);
+      msgs.push(`🏗️ El lugar ${inst.negocio.nombre} ahora ${frase(t)}`);
+    });
+    (c.negocio_quita || []).forEach((t) => { inst.negocio.tags = inst.negocio.tags.filter((x) => x !== t); });
+  }
+  if (c.relacion && inst.otro) {
+    const antes = getRel(inst.residente, inst.otro);
+    const despues = Math.max(0, Math.min(100, antes + c.relacion));
+    relaciones[claveRel(inst.residente, inst.otro)] = despues;
+    const e1 = etiquetaRel(antes), e2 = etiquetaRel(despues);
+    const quienes = `${inst.residente.nombre} y ${inst.otro.nombre}`;
+    if (e1.nombre !== e2.nombre) msgs.push(`${e2.emoji} ${quienes} ${FRASE_REL[e2.nombre]} (${despues})`);
+    else msgs.push(`${c.relacion > 0 ? "▲" : "▼"} ${quienes}: relación ${antes} → ${despues}`);
+  }
+  return msgs;
+}
+
+function azarPesado(lista) {
+  const total = lista.reduce((s, p) => s + PESOS[p.ev.nivel], 0);
+  let n = Math.random() * total;
+  for (const p of lista) { n -= PESOS[p.ev.nivel]; if (n <= 0) return p; }
+  return lista[lista.length - 1];
+}
+
+function generarCiudad() {
+  const negocios = mezclar(NEGOCIOS);
+  const nombres = mezclar(RESIDENTES.nombres);
+  let contador = 1;
+  ciudad = TIPOS.map((tipo, i) => {
+    if (tipo === "plaza") return { i, tipo, nombre: "Plaza central" };
+    if (tipo === "negocio") { const n = negocios.pop(); return { i, tipo, nombre: n.nombre, tags: [...n.tags] }; }
+    const cantidad = 1 + Math.floor(Math.random() * 3);
+    const residentes = [];
+    for (let k = 0; k < cantidad; k++) {
+      residentes.push({ id: "r" + contador++, nombre: nombres.pop(), edad: azar(RESIDENTES.edades),
+        casa: i, tags: mezclar(RESIDENTES.tags).slice(0, 2), relaciones: {} });
+    }
+    return { i, tipo, nombre: "Casa de " + residentes[0].nombre, residentes };
+  });
+  // relaciones de arranque: los que viven juntos se llevan mejor
+  relaciones = {};
+  const todos = todosLosResidentes();
+  todos.forEach((a, x) => todos.slice(x + 1).forEach((b) => {
+    const base = a.casa === b.casa ? 70 + Math.floor(Math.random() * 16) : 35 + Math.floor(Math.random() * 31);
+    relaciones[claveRel(a, b)] = base;
+  }));
+  eventos = {}; elegido = null; historial = []; ultimoId = null;
+  dia = 1; reloj = 0; bloqueado = false;
+  planificarDia();
+}
+
+// ====== MOTOR DE EVENTOS ======
+function posiblesEventos() {
+  const posibles = [];
+  const residentes = todosLosResidentes();
+  EVENTOS.forEach((ev) => {
+    if (ev.id === ultimoId) return;
+    residentes.forEach((r) => {
+      if (!tieneTodo(r.tags, ev.requisitos.residente)) return;
+      if (ev.lugar === "casa") {
+        if (!ocupado(r.casa)) posibles.push({ ev, residente: r, lugar: r.casa, involucrados: [r.casa] });
+      } else if (ev.lugar === "vecino") {
+        VECINOS[r.casa].forEach((v) => {
+          const neg = ciudad[v];
+          if (!ocupado(v) && tieneTodo(neg.tags, ev.requisitos.negocio))
+            posibles.push({ ev, residente: r, negocio: neg, lugar: v, involucrados: [r.casa, v] });
+        });
+      } else if (ev.lugar === "plaza") {
+        if (ocupado(4)) return;
+        residentes.forEach((o) => {
+          const rel = getRel(r, o);
+          const req = ev.requisitos;
+          if (req.relacion_min != null && rel < req.relacion_min) return;
+          if (req.relacion_max != null && rel > req.relacion_max) return;
+          if (o.casa !== r.casa && tieneTodo(o.tags, req.otro))
+            posibles.push({ ev, residente: r, otro: o, lugar: 4, involucrados: [4, r.casa, o.casa] });
+        });
+      }
+    });
+  });
+  return posibles;
+}
+
+function generarEvento() {
+  const posibles = posiblesEventos();
+  if (!posibles.length) return;
+  const p = azarPesado(posibles);
+  ultimoId = p.ev.id;
+  eventos[p.lugar] = { ...p, nivel: p.ev.nivel, estado: "nuevo", eleccion: null, dia };
+  dibujarTodo();
+}
+
+function planificarDia() {
+  const [min, max] = EVENTOS_POR_DIA;
+  const n = min + Math.floor(Math.random() * (max - min + 1));
+  agenda = Array.from({ length: n }, () => 0.1 + Math.random() * 0.8).sort((a, b) => a - b);
+}
+
+function nuevoDia() {
+  dia++; reloj = 0; bloqueado = false;
+  eventos = {};   // todo ya fue visto o resuelto (queda guardado en el historial)
+  planificarDia();
+  dibujarTodo();
+}
+
+// si el día ya se terminó y no queda nada por ver, arranca el siguiente
+function chequearFinDeDia() {
+  if (bloqueado && pendientes() === 0) nuevoDia();
+}
+
+function textoDe(inst) {
+  return inst.ev.texto
+    .replace("{residente}", `<strong>${inst.residente.nombre}</strong>`)
+    .replace("{otro}", inst.otro ? `<strong>${inst.otro.nombre}</strong>` : "")
+    .replace("{negocio}", inst.negocio ? inst.negocio.nombre : "");
+}
+
+function registrar(inst) {
+  historial.unshift({ texto: textoDe(inst), eleccion: inst.eleccion, nivel: inst.nivel, dia: inst.dia, mensajes: inst.mensajes || [] });
+  historial = historial.slice(0, 10);
+}
+
+function seleccionar(i) {
+  elegido = i;
+  const inst = eventos[i];
+  if (inst && inst.estado === "nuevo" && inst.nivel === "verde") {
+    inst.mensajes = aplicarConsecuencias(inst, inst.ev.consecuencias);
+    inst.estado = "visto";
+    registrar(inst);
+  }
+  mostrarFicha(ciudad[i]);
+  dibujarTodo();
+  chequearFinDeDia();
+}
+
+function elegirOpcion(inst, op) {
+  inst.estado = "resuelto";
+  inst.eleccion = op.texto;
+  inst.mensajes = aplicarConsecuencias(inst, op.consecuencias);
+  registrar(inst);
+  if (elegido !== null) mostrarFicha(ciudad[elegido]);
+  dibujarTodo();
+  chequearFinDeDia();
+}
+
+// ====== DIBUJO ======
+function marcaDe(i) {
+  const e = eventos[i];
+  if (!e) return null;
+  return e.estado === "nuevo" ? e.nivel : "gris";
+}
+
+function dibujarCiudad() {
+  const cont = document.getElementById("ciudad");
+  cont.innerHTML = "";
+  ciudad.forEach((lugar) => {
+    const b = document.createElement("button");
+    b.className = "lugar " + lugar.tipo + (elegido === lugar.i ? " elegido" : "");
+    b.dataset.i = lugar.i;
+    const marca = marcaDe(lugar.i);
+    if (marca) b.dataset.marca = marca;
+    const gente = lugar.residentes ? lugar.residentes.map(() => "●").join("") : "";
+    b.innerHTML = `<span class="nombre">${lugar.nombre}</span><span class="gente">${gente}</span>`;
+    b.setAttribute("aria-label", lugar.nombre + (marca ? `, evento ${NOMBRE_NIVEL[marca]}` : ""));
+    b.addEventListener("mouseenter", () => marcarVecinos(lugar.i, true));
+    b.addEventListener("mouseleave", () => marcarVecinos(lugar.i, false));
+    b.addEventListener("click", () => seleccionar(lugar.i));
+    cont.appendChild(b);
+  });
+}
+
+function marcarVecinos(i, activo) {
+  VECINOS[i].forEach((v) => document.querySelector(`.lugar[data-i="${v}"]`).classList.toggle("vecino", activo));
+}
+
+function dibujarEvento() {
+  const cont = document.getElementById("evento");
+  const sinVer = pendientes();
+  document.getElementById("contador").textContent = bloqueado
+    ? `🌙 Fin del día: faltan ${sinVer}` : (sinVer ? `📬 ${sinVer} sin ver` : "");
+
+  if (elegido === null) { cont.innerHTML = `<p class="vacio">Tocá un lugar con ❗ para ver qué pasa.</p>`; return; }
+  const inst = eventos[elegido];
+  if (!inst) { cont.innerHTML = `<p class="vacio">Nada nuevo en ${ciudad[elegido].nombre} 🍃</p>`; return; }
+
+  const marca = marcaDe(elegido);
+  cont.className = marca === "gris" ? "gastado" : "";
+  cont.innerHTML = `<span class="chip ${marca}">${NOMBRE_NIVEL[marca]}</span><p class="evento-texto">${textoDe(inst)}</p>`;
+
+  if (inst.estado === "nuevo" && inst.nivel !== "verde") {
+    const ops = document.createElement("div");
+    ops.className = "opciones";
+    inst.ev.opciones.forEach((op) => {
+      const b = document.createElement("button");
+      b.className = "accion"; b.textContent = op.texto;
+      b.addEventListener("click", () => elegirOpcion(inst, op));
+      ops.appendChild(b);
+    });
+    cont.appendChild(ops);
+  } else {
+    if (inst.eleccion) cont.insertAdjacentHTML("beforeend", `<p class="resultado">→ ${inst.eleccion}</p>`);
+    if (inst.mensajes && inst.mensajes.length)
+      cont.insertAdjacentHTML("beforeend", `<ul class="cambios">${inst.mensajes.map((m) => `<li>${m}</li>`).join("")}</ul>`);
+  }
+}
+
+function dibujarHistorial() {
+  const ul = document.getElementById("historial");
+  if (!historial.length) { ul.innerHTML = `<li class="vacio">Todavía no pasó nada.</li>`; return; }
+  ul.innerHTML = historial.map((h) =>
+    `<li class="${h.nivel}"><span class="cuando">Día ${h.dia}</span> ${h.texto}${h.eleccion ? `<br><span class="eleccion">→ ${h.eleccion}</span>` : ""}${h.mensajes.map((m) => `<br><span class="cambio">${m}</span>`).join("")}</li>`
+  ).join("");
+}
+
+const tagsHTML = (tags) => `<div class="tags">${tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>`;
+
+function mostrarFicha(lugar) {
+  const ficha = document.getElementById("ficha");
+  const vecinos = VECINOS[lugar.i].map((v) => ciudad[v].nombre).join(", ");
+  let html = `<h2>${lugar.nombre}</h2><p class="vacio">Vecinos: ${vecinos}</p>`;
+  if (lugar.tipo === "negocio") html += `<p style="margin-top:8px">Características:</p>${tagsHTML(lugar.tags)}`;
+  else if (lugar.tipo === "casa") lugar.residentes.forEach((r) => {
+    const rels = todosLosResidentes().filter((o) => o.id !== r.id).map((o) => {
+      const v = getRel(r, o); return `<span class="tag">${o.nombre} ${v} ${etiquetaRel(v).emoji}</span>`; }).join("");
+    html += `<div class="residente"><p><strong>${r.nombre}</strong> (${r.edad})</p>${tagsHTML(r.tags)}
+      <p class="vacio" style="margin-top:8px">Relaciones:</p><div class="tags">${rels}</div></div>`; });
+  else html += `<p style="margin-top:8px">Acá se cruzan los vecinos de las 4 casas 🗣️</p>`;
+  ficha.innerHTML = html;
+}
+
+function dibujarTodo() {
+  document.getElementById("dia").textContent = `Día ${dia} ${bloqueado ? "🌙" : "☀️"}`;
+  document.getElementById("barra-cont").classList.toggle("frenada", bloqueado);
+  dibujarCiudad(); dibujarEvento(); dibujarHistorial();
+}
+
+// ====== RELOJ ======
+setInterval(() => {
+  if (!ciudad.length || pausado || bloqueado) return;
+  reloj += 0.1;
+  const avance = reloj / DURACION_DIA;
+  document.getElementById("barra").style.width = Math.min(100, avance * 100) + "%";
+  while (agenda.length && agenda[0] <= avance && !bloqueado) { agenda.shift(); generarEvento(); }
+  if (avance >= 1) {
+    if (pendientes() > 0) { bloqueado = true; dibujarTodo(); }   // espera a que veamos todo
+    else nuevoDia();
+  }
+}, 100);
+
+// ====== BOTONES ======
+document.getElementById("nueva").addEventListener("click", () => {
+  generarCiudad(); dibujarTodo();
+  document.getElementById("ficha").innerHTML = `<p class="vacio">Ciudad nueva 🏘️ Tocá un lugar para conocerlo.</p>`;
+});
+document.getElementById("pausa").addEventListener("click", (e) => {
+  pausado = !pausado;
+  e.target.textContent = pausado ? "Seguir ▶️" : "Pausar ⏸️";
+});
+
+// ====== ARRANQUE ======
+async function cargar(archivo) {
+  const r = await fetch("data/" + archivo);
+  if (!r.ok) throw new Error("No se pudo cargar " + archivo);
+  return r.json();
+}
+
+async function iniciar() {
+  try {
+    [NEGOCIOS, RESIDENTES, EVENTOS, FRASE_TAG] = await Promise.all(
+      ["negocios.json", "residentes.json", "eventos.json", "frases.json"].map(cargar));
+    generarCiudad();
+    dibujarTodo();
+  } catch (e) {
+    document.getElementById("evento").innerHTML =
+      `<p class="vacio">No se pudieron cargar los datos (${e.message}). Abrí el juego desde un servidor, no con doble clic.</p>`;
+  }
+}
+
+iniciar();

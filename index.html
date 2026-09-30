@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Miniciudad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="juego">
+  <div class="columna">
+    <section class="panel">
+      <div class="cabecera"><h1>Miniciudad</h1><span class="dia" id="dia">Día 1 ☀️</span></div>
+      <div class="ciudad" id="ciudad"></div>
+      <div class="barra" id="barra-cont" aria-hidden="true"><div id="barra"></div></div>
+      <div class="botonera">
+        <button class="accion" id="nueva">Nueva ciudad 🎲</button>
+        <button class="accion" id="pausa">Pausar ⏸️</button>
+      </div>
+    </section>
+    <section class="panel ficha" id="ficha">
+      <p class="vacio">Tocá un lugar para conocerlo.</p>
+    </section>
+  </div>
+
+  <div class="columna">
+    <section class="panel" id="panel-evento">
+      <div class="cabecera"><h2>Evento</h2><span class="contador" id="contador"></span></div>
+      <div id="evento"></div>
+    </section>
+    <section class="panel">
+      <h2>Historial</h2>
+      <ul class="historial" id="historial"></ul>
+    </section>
+  </div>
+</main>
+
+<script src="game.js"></script>
+</body>
+</html>

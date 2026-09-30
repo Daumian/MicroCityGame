@@ -1,0 +1,35 @@
+{
+  "nombres": [
+    "Juan",
+    "Marta",
+    "Tito",
+    "Lucía",
+    "Ramón",
+    "Sofi",
+    "Beto",
+    "Clara",
+    "Nico",
+    "Pocha",
+    "Lalo",
+    "Vera",
+    "Tomi",
+    "Irma"
+  ],
+  "edades": [
+    "niño",
+    "adulto",
+    "anciano"
+  ],
+  "tags": [
+    "cocina",
+    "historia",
+    "pesca",
+    "escalada",
+    "robotica",
+    "le_gusta_hablar",
+    "gruñon",
+    "huerta",
+    "lectura",
+    "musica"
+  ]
+}

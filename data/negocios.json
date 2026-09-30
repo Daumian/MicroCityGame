@@ -1,0 +1,65 @@
+[
+  {
+    "id": "panaderia",
+    "nombre": "Panadería",
+    "tags": [
+      "comida",
+      "cocina"
+    ]
+  },
+  {
+    "id": "lago",
+    "nombre": "Lago",
+    "tags": [
+      "naturaleza",
+      "pesca"
+    ]
+  },
+  {
+    "id": "baldio",
+    "nombre": "Baldío abandonado",
+    "tags": [
+      "abandonado"
+    ]
+  },
+  {
+    "id": "biblioteca",
+    "nombre": "Biblioteca",
+    "tags": [
+      "libros",
+      "historia"
+    ]
+  },
+  {
+    "id": "taller",
+    "nombre": "Taller mecánico",
+    "tags": [
+      "robotica",
+      "herramientas"
+    ]
+  },
+  {
+    "id": "palestra",
+    "nombre": "Palestra",
+    "tags": [
+      "escalada",
+      "deporte"
+    ]
+  },
+  {
+    "id": "fabrica",
+    "nombre": "Fábrica de latas",
+    "tags": [
+      "industria",
+      "ruido"
+    ]
+  },
+  {
+    "id": "vivero",
+    "nombre": "Vivero",
+    "tags": [
+      "naturaleza",
+      "huerta"
+    ]
+  }
+]
