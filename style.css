@@ -82,3 +82,10 @@ button.accion:focus-visible { outline: 3px solid var(--negocio); outline-offset:
 .tag { border: 3px solid var(--borde); padding: 0 6px; font-size: 15px; background: var(--fondo); }
 .vacio { color: var(--suave); margin: 0; }
 @media (prefers-reduced-motion: reduce) { .lugar { transition: none; } .lugar[data-marca]::after { animation: none; } }
+
+/* ficha del residente: retrato estilo boceto */
+.residente { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+.residente .datos { flex: 1; min-width: 180px; }
+.retrato { border: 4px solid var(--borde); box-shadow: 4px 4px 0 var(--borde); background: var(--fondo);
+  padding: 6px; transform: rotate(-2deg); }
+.cara { display: block; width: 96px; height: 96px; image-rendering: pixelated; }
