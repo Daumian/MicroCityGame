@@ -126,6 +126,9 @@
       "residente": [],
       "negocio": [
         "pesca"
+      ],
+      "residente_sin": [
+        "pesca"
       ]
     },
     "texto": "{residente} ve gente pescando en el {negocio}. ¿Le pica el bichito?",
@@ -440,5 +443,170 @@
         }
       }
     ]
+  },
+  {
+    "id": "aprender_escalada",
+    "nivel": "amarillo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [],
+      "residente_sin": [
+        "escalada"
+      ],
+      "negocio": [
+        "escalada"
+      ]
+    },
+    "texto": "{residente} se queda mirando cómo trepan en la {negocio}. ¡Qué ganas de probar!",
+    "opciones": [
+      {
+        "texto": "¡A ponerse los pies de gato!",
+        "consecuencias": {
+          "residente_agrega": [
+            "escalada"
+          ]
+        }
+      },
+      {
+        "texto": "Mejor mirar desde abajo",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "aprender_cocina",
+    "nivel": "amarillo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [],
+      "residente_sin": [
+        "cocina"
+      ],
+      "negocio": [
+        "cocina"
+      ]
+    },
+    "texto": "{residente} espía cómo amasan en la {negocio}. El olor lo tiene hipnotizado.",
+    "opciones": [
+      {
+        "texto": "Que pida que le enseñen",
+        "consecuencias": {
+          "residente_agrega": [
+            "cocina"
+          ]
+        }
+      },
+      {
+        "texto": "Que compre y listo",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "aprender_lectura",
+    "nivel": "amarillo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [],
+      "residente_sin": [
+        "lectura"
+      ],
+      "negocio": [
+        "libros"
+      ]
+    },
+    "texto": "{residente} entra a curiosear a la {negocio} y se queda con un libro en la mano.",
+    "opciones": [
+      {
+        "texto": "Que se lo lleve prestado",
+        "consecuencias": {
+          "residente_agrega": [
+            "lectura"
+          ]
+        }
+      },
+      {
+        "texto": "Que lo deje en su lugar",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "aprender_robotica",
+    "nivel": "amarillo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [],
+      "residente_sin": [
+        "robotica"
+      ],
+      "negocio": [
+        "robotica"
+      ]
+    },
+    "texto": "En el {negocio} hay un robotito a medio armar. A {residente} le brillan los ojos.",
+    "opciones": [
+      {
+        "texto": "Que ayude a atornillar",
+        "consecuencias": {
+          "residente_agrega": [
+            "robotica"
+          ]
+        }
+      },
+      {
+        "texto": "No toques nada",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "aprender_huerta",
+    "nivel": "amarillo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [],
+      "residente_sin": [
+        "huerta"
+      ],
+      "negocio": [
+        "huerta"
+      ]
+    },
+    "texto": "{residente} ve las plantas del {negocio} y piensa: ¿y si hago una en casa?",
+    "opciones": [
+      {
+        "texto": "Que pida unas semillas",
+        "consecuencias": {
+          "residente_agrega": [
+            "huerta"
+          ]
+        }
+      },
+      {
+        "texto": "Las plantas se le mueren seguro",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "ruido_fabrica",
+    "nivel": "verde",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [],
+      "residente_sin": [
+        "gruñon"
+      ],
+      "negocio": [
+        "ruido"
+      ]
+    },
+    "texto": "El ruido de la {negocio} tiene de mal humor a {residente} desde temprano.",
+    "consecuencias": {
+      "residente_agrega": [
+        "gruñon"
+      ]
+    }
   }
 ]
