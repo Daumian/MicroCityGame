@@ -109,3 +109,5 @@ details.mas summary { cursor: pointer; color: var(--suave); font-weight: 600; ma
 button.btn-filtro { padding: 2px 6px; box-shadow: 3px 3px 0 var(--borde); vertical-align: middle; text-align: center; }
 .embudo { width: 14px; height: 12px; display: block; }
 .ficha .cabecera { margin-bottom: 4px; }
+
+.pips { letter-spacing: 1px; font-size: 12px; color: var(--negocio); }
