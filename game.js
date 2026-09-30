@@ -414,9 +414,10 @@ function mostrarFicha(lugar) {
   let html = `<div class="cabecera"><h2>${lugar.nombre}</h2>${btnFiltro("l", lugar.i, lugar.nombre)}</div><p class="vacio">Vecinos: ${vecinos}</p>`;
   if (lugar.tipo === "negocio") html += `<p style="margin-top:8px">Características:</p>${tagsHTML(lugar.tags)}`;
   else if (lugar.tipo === "casa") lugar.residentes.forEach((r) => {
-    html += `<div class="residente"><div class="retrato">${caraPixelada(r)}</div><div class="datos">
-      <p><strong>${r.nombre}</strong> (${r.edad}) ${btnFiltro("r", r.id, r.nombre)}</p>${interesesHTML(r)}
-      <p class="vacio" style="margin-top:8px">Relaciones:</p>${relacionesHTML(r)}</div></div>`; });
+    html += `<details class="residente" open><summary><strong>${r.nombre}</strong> (${r.edad})</summary><div class="cuerpo">
+      <div class="retrato">${caraPixelada(r)}</div><div class="datos">
+      <p>${btnFiltro("r", r.id, r.nombre)} <span class="vacio">ver su historial</span></p>${interesesHTML(r)}
+      <p class="vacio" style="margin-top:8px">Relaciones:</p>${relacionesHTML(r)}</div></div></details>`; });
   else html += `<p style="margin-top:8px">Acá se cruzan los vecinos de las 4 casas 🗣️</p>`;
   ficha.innerHTML = html;
 }
