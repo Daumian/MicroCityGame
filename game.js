@@ -32,9 +32,11 @@ const mezclar = (lista) => [...lista].sort(() => Math.random() - 0.5);
 const tieneTodo = (tags, requeridos = []) => requeridos.every((t) => tags.includes(t));
 const todosLosResidentes = () => ciudad.filter((l) => l.tipo === "casa").flatMap((l) => l.residentes);
 const esInteres = (t) => (RESIDENTES.intereses || []).includes(t);
+const esPersonalidad = (t) => (RESIDENTES.personalidad || []).includes(t);
+const esNivelado = (t) => esInteres(t) || esPersonalidad(t);   // intereses y personalidad tienen nivel 1-5
 const nombreTag = (t) => t.replace(/_/g, " ");
 const NIVEL_MAX = 5;
-const nivelesIniciales = (tags) => Object.fromEntries(tags.filter(esInteres).map((t) => [t, 1 + Math.floor(Math.random() * 3)]));
+const nivelesIniciales = (tags) => Object.fromEntries(tags.filter(esNivelado).map((t) => [t, 1 + Math.floor(Math.random() * 3)]));
 const ocupado = (i) => eventos[i] && eventos[i].estado === "nuevo";
 
 // ====== RELACIONES ======
@@ -61,9 +63,9 @@ function aplicarConsecuencias(inst, c = {}) {
   const msgs = [];
   const sub = (tags = []) => tags.map((t) => (t === "$interes" ? inst.interes : t));
   const agregar = (quien, tags) => sub(tags).forEach((t) => {
-    if (quien.tags.includes(t)) return;
+    if (quien.tags.includes(t)) { if (esNivelado(t)) cambiarNivel(quien, [t], 1); return; }   // ya lo tenía: sube de nivel
     quien.tags.push(t);
-    if (esInteres(t)) quien.niveles[t] = 1;
+    if (esNivelado(t)) quien.niveles[t] = 1;
     msgs.push(`✨ Ahora ${conA(quien.nombre, frase(t))}`);
   });
   const quitar = (quien, tags) => sub(tags).forEach((t) => {
@@ -395,17 +397,20 @@ function relacionesHTML(r) {
 const pips = (n) => "■".repeat(n) + "□".repeat(NIVEL_MAX - n);
 const chipInteres = (r, t) => `<span class="tag">${nombreTag(t)} <span class="pips">${pips(r.niveles[t] || 1)}</span></span>`;
 
-function interesesHTML(r) {
-  const ints = r.tags.filter(esInteres).sort((a, b) => (r.niveles[b] || 1) - (r.niveles[a] || 1));
-  const rasgos = r.tags.filter((t) => !esInteres(t));
-  let html = "";
-  if (ints.length) {
-    const top = ints.slice(0, 3), resto = ints.slice(3);
-    html += `<p class="vacio rel-titulo">Intereses</p><div class="tags">${top.map((t) => chipInteres(r, t)).join("")}</div>`;
-    if (resto.length) html += `<details class="mas"><summary>Ver los demás (${resto.length})</summary><div class="tags">${resto.map((t) => chipInteres(r, t)).join("")}</div></details>`;
-  }
-  if (rasgos.length) html += `<p class="vacio rel-titulo">Rasgos</p>${tagsHTML(rasgos)}`;
+function seccionNivelada(r, titulo, lista) {
+  if (!lista.length) return "";
+  const orden = [...lista].sort((x, y) => (r.niveles[y] || 1) - (r.niveles[x] || 1));
+  const top = orden.slice(0, 3), resto = orden.slice(3);
+  let html = `<p class="vacio rel-titulo">${titulo}</p><div class="tags">${top.map((t) => chipInteres(r, t)).join("")}</div>`;
+  if (resto.length) html += `<details class="mas"><summary>Ver los demás (${resto.length})</summary><div class="tags">${resto.map((t) => chipInteres(r, t)).join("")}</div></details>`;
   return html;
+}
+
+function interesesHTML(r) {
+  const otros = r.tags.filter((t) => !esNivelado(t));
+  return seccionNivelada(r, "Intereses", r.tags.filter(esInteres))
+    + seccionNivelada(r, "Personalidad", r.tags.filter(esPersonalidad))
+    + (otros.length ? `<p class="vacio rel-titulo">Además</p>${tagsHTML(otros)}` : "");
 }
 
 function mostrarFicha(lugar) {
