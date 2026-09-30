@@ -17,7 +17,7 @@ const VECINOS = { 0: [1, 3], 1: [0, 2], 2: [1, 5], 3: [0, 6], 4: [1, 3, 5, 7], 5
 
 // ====== ESTADO ======
 let ciudad = [];
-let relaciones = {};  // "r1|r3" -> 0 a 100
+let relaciones = {};  // "r1|r3" -> -100 a 100 (0 = recién conocidos)
 let eventos = {};      // lugar -> evento activo { ev, nivel, estado: "nuevo" | "visto" | "resuelto", ... }
 let elegido = null;
 let historial = [];
@@ -35,15 +35,18 @@ const ocupado = (i) => eventos[i] && eventos[i].estado === "nuevo";
 
 // ====== RELACIONES ======
 const claveRel = (a, b) => [a.id, b.id].sort().join("|");
-const getRel = (a, b) => relaciones[claveRel(a, b)] ?? 50;
+const getRel = (a, b) => relaciones[claveRel(a, b)] ?? 0;
 function etiquetaRel(v) {
-  if (v < 20) return { nombre: "peleados", emoji: "😠" };
-  if (v < 40) return { nombre: "tensos", emoji: "😒" };
-  if (v < 60) return { nombre: "conocidos", emoji: "🙂" };
-  if (v < 80) return { nombre: "amigos", emoji: "💚" };
+  if (v <= -60) return { nombre: "enemigos", emoji: "🤬" };
+  if (v <= -30) return { nombre: "peleados", emoji: "😠" };
+  if (v < -10) return { nombre: "tensos", emoji: "😒" };
+  if (v <= 10) return { nombre: "recién conocidos", emoji: "👋" };
+  if (v < 40) return { nombre: "conocidos", emoji: "🙂" };
+  if (v < 70) return { nombre: "amigos", emoji: "💚" };
   return { nombre: "inseparables", emoji: "💞" };
 }
-const FRASE_REL = { peleados: "ahora están peleados", tensos: "ahora están tensos", conocidos: "ahora se llevan normal",
+const FRASE_REL = { enemigos: "ahora son enemigos", peleados: "ahora están peleados", tensos: "ahora están tensos",
+  "recién conocidos": "vuelven a ser casi desconocidos", conocidos: "ahora se llevan normal",
   amigos: "ahora son amigos", inseparables: "ahora son inseparables" };
 
 // ====== CONSECUENCIAS ======
@@ -83,11 +86,11 @@ function aplicarConsecuencias(inst, c = {}) {
   }
   if (c.relacion && inst.otro) {
     const antes = getRel(inst.residente, inst.otro);
-    const despues = Math.max(0, Math.min(100, antes + c.relacion));
+    const despues = Math.max(-100, Math.min(100, antes + c.relacion));
     relaciones[claveRel(inst.residente, inst.otro)] = despues;
     const e1 = etiquetaRel(antes), e2 = etiquetaRel(despues);
     const quienes = `${inst.residente.nombre} y ${inst.otro.nombre}`;
-    const fuerte = Math.abs(despues - antes) >= 15;
+    const fuerte = Math.abs(despues - antes) >= 30;
     const signo = c.relacion > 0 ? (fuerte ? "++" : "+") : (fuerte ? "−−" : "−");
     const clase = c.relacion > 0 ? "sube" : "baja";
     if (e1.nombre !== e2.nombre) msgs.push(`${e2.emoji} ${quienes} ${FRASE_REL[e2.nombre]} <span class="${clase}">${signo}</span>`);
@@ -122,7 +125,7 @@ function generarCiudad() {
   relaciones = {};
   const todos = todosLosResidentes();
   todos.forEach((a, x) => todos.slice(x + 1).forEach((b) => {
-    const base = a.casa === b.casa ? 70 + Math.floor(Math.random() * 16) : 35 + Math.floor(Math.random() * 31);
+    const base = a.casa === b.casa ? 40 + Math.floor(Math.random() * 31) : -25 + Math.floor(Math.random() * 51);
     relaciones[claveRel(a, b)] = base;
   }));
   eventos = {}; elegido = null; historial = []; filtro = null; ultimoId = null;

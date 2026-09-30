@@ -33,7 +33,7 @@
     },
     "texto": "{residente} y {otro} charlaron un rato largo en la plaza.",
     "consecuencias": {
-      "relacion": 8
+      "relacion": 16
     }
   },
   {
@@ -43,11 +43,11 @@
     "requisitos": {
       "residente": [],
       "otro": [],
-      "relacion_min": 60
+      "relacion_min": 20
     },
     "texto": "{residente} y {otro} compartieron unos mates en la plaza 🍵",
     "consecuencias": {
-      "relacion": 5
+      "relacion": 10
     }
   },
   {
@@ -57,11 +57,11 @@
     "requisitos": {
       "residente": [],
       "otro": [],
-      "relacion_max": 25
+      "relacion_max": -50
     },
     "texto": "{residente} cruzó de vereda para no saludar a {otro}.",
     "consecuencias": {
-      "relacion": -3
+      "relacion": -6
     }
   },
   {
@@ -287,13 +287,13 @@
           "otro_agrega": [
             "musica"
           ],
-          "relacion": 20
+          "relacion": 40
         }
       },
       {
         "texto": "Que siga tocando solo",
         "consecuencias": {
-          "relacion": -5
+          "relacion": -10
         }
       }
     ]
@@ -316,13 +316,13 @@
           "otro_agrega": [
             "pesca"
           ],
-          "relacion": 15
+          "relacion": 30
         }
       },
       {
         "texto": "Que le diga que no",
         "consecuencias": {
-          "relacion": -5
+          "relacion": -10
         }
       }
     ]
@@ -334,20 +334,20 @@
     "requisitos": {
       "residente": [],
       "otro": [],
-      "relacion_max": 25
+      "relacion_max": -50
     },
     "texto": "{residente} sigue enojado con {otro} y se lo cruza en la plaza.",
     "opciones": [
       {
         "texto": "Que le pida disculpas",
         "consecuencias": {
-          "relacion": 25
+          "relacion": 50
         }
       },
       {
         "texto": "Que lo ignore",
         "consecuencias": {
-          "relacion": -5
+          "relacion": -10
         }
       }
     ]
@@ -430,13 +430,13 @@
       {
         "texto": "Separarlos",
         "consecuencias": {
-          "relacion": -10
+          "relacion": -20
         }
       },
       {
         "texto": "Dejar que se arreglen solos",
         "consecuencias": {
-          "relacion": -30,
+          "relacion": -60,
           "otro_agrega": [
             "gruñon"
           ]
@@ -738,7 +738,7 @@
     },
     "texto": "{residente} le regaló un frasco de mermelada casera a {otro} en la plaza 🍓",
     "consecuencias": {
-      "relacion": 10
+      "relacion": 20
     }
   },
   {
@@ -756,7 +756,7 @@
       {
         "texto": "¡Que haga un recital!",
         "consecuencias": {
-          "relacion": 15,
+          "relacion": 30,
           "otro_agrega": [
             "musica"
           ]
@@ -765,7 +765,7 @@
       {
         "texto": "Que la guarde, da miedito",
         "consecuencias": {
-          "relacion": -5
+          "relacion": -10
         }
       }
     ]
@@ -782,7 +782,7 @@
     },
     "texto": "{residente} le cuenta a {otro} su truco de pescar con fruta de la huerta 🍎🎣",
     "consecuencias": {
-      "relacion": 6
+      "relacion": 12
     }
   }
 ]
