@@ -608,5 +608,181 @@
         "gruñon"
       ]
     }
+  },
+  {
+    "id": "fruta_carnada",
+    "nivel": "amarillo",
+    "lugar": "casa",
+    "requisitos": {
+      "residente": [
+        "huerta",
+        "pesca"
+      ]
+    },
+    "texto": "{residente} descubrió que la fruta de su huerta sirve de carnada. ¡Dos pasiones en una!",
+    "opciones": [
+      {
+        "texto": "Que pruebe en el lago 🎣",
+        "consecuencias": {
+          "residente_agrega": [
+            "pesca_fruta"
+          ]
+        }
+      },
+      {
+        "texto": "Mejor la fruta se come",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "mermelada",
+    "nivel": "amarillo",
+    "lugar": "casa",
+    "requisitos": {
+      "residente": [
+        "huerta",
+        "cocina"
+      ],
+      "residente_sin": [
+        "mermelada"
+      ]
+    },
+    "texto": "A {residente} le sobra fruta de la huerta. ¿Qué hace con eso?",
+    "opciones": [
+      {
+        "texto": "¡Mermelada casera!",
+        "consecuencias": {
+          "residente_agrega": [
+            "mermelada"
+          ]
+        }
+      },
+      {
+        "texto": "La regala tal cual",
+        "consecuencias": {
+          "residente_agrega": [
+            "generoso"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "riego_inventado",
+    "nivel": "amarillo",
+    "lugar": "casa",
+    "requisitos": {
+      "residente": [
+        "huerta",
+        "inventor"
+      ],
+      "residente_sin": [
+        "riego_auto"
+      ]
+    },
+    "texto": "{residente} está harto de regar a mano y mira sus herramientas con ideas.",
+    "opciones": [
+      {
+        "texto": "¡Riego automático!",
+        "consecuencias": {
+          "residente_agrega": [
+            "riego_auto"
+          ]
+        }
+      },
+      {
+        "texto": "Que siga con la regadera",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "guitarra_robot",
+    "nivel": "amarillo",
+    "lugar": "casa",
+    "requisitos": {
+      "residente": [
+        "musica",
+        "robotica"
+      ],
+      "residente_sin": [
+        "guitarra_robot"
+      ]
+    },
+    "texto": "{residente} se pregunta si un robot podría tocar la guitarra.",
+    "opciones": [
+      {
+        "texto": "Que lo construya 🤖",
+        "consecuencias": {
+          "residente_agrega": [
+            "guitarra_robot"
+          ]
+        }
+      },
+      {
+        "texto": "Mejor tocar a mano",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "mermelada_plaza",
+    "nivel": "verde",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [
+        "mermelada"
+      ],
+      "otro": []
+    },
+    "texto": "{residente} le regaló un frasco de mermelada casera a {otro} en la plaza 🍓",
+    "consecuencias": {
+      "relacion": 10
+    }
+  },
+  {
+    "id": "recital_robot",
+    "nivel": "amarillo",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [
+        "guitarra_robot"
+      ],
+      "otro": []
+    },
+    "texto": "{residente} presenta su guitarra robot en la plaza y {otro} no puede creer lo que escucha.",
+    "opciones": [
+      {
+        "texto": "¡Que haga un recital!",
+        "consecuencias": {
+          "relacion": 15,
+          "otro_agrega": [
+            "musica"
+          ]
+        }
+      },
+      {
+        "texto": "Que la guarde, da miedito",
+        "consecuencias": {
+          "relacion": -5
+        }
+      }
+    ]
+  },
+  {
+    "id": "pesca_fruta_show",
+    "nivel": "verde",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [
+        "pesca_fruta"
+      ],
+      "otro": []
+    },
+    "texto": "{residente} le cuenta a {otro} su truco de pescar con fruta de la huerta 🍎🎣",
+    "consecuencias": {
+      "relacion": 6
+    }
   }
 ]
