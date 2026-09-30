@@ -21,6 +21,7 @@ let relaciones = {};  // "r1|r3" -> 0 a 100
 let eventos = {};      // lugar -> evento activo { ev, nivel, estado: "nuevo" | "visto" | "resuelto", ... }
 let elegido = null;
 let historial = [];
+let filtro = null;   // { tipo: "r" | "l", id, nombre } mientras se mira el historial de alguien o algún lugar
 let ultimoId = null;
 let dia = 1, reloj = 0, agenda = [];
 let pausado = false, bloqueado = false;
@@ -87,9 +88,10 @@ function aplicarConsecuencias(inst, c = {}) {
     const e1 = etiquetaRel(antes), e2 = etiquetaRel(despues);
     const quienes = `${inst.residente.nombre} y ${inst.otro.nombre}`;
     const fuerte = Math.abs(despues - antes) >= 15;
-    const signo = c.relacion > 0 ? `<span class="sube">${fuerte ? "++" : "+"}</span>` : `<span class="baja">${fuerte ? "−−" : "−"}</span>`;
-    if (e1.nombre !== e2.nombre) msgs.push(`${e2.emoji} ${quienes} ${FRASE_REL[e2.nombre]} ${signo}`);
-    else msgs.push(`${signo} ${quienes}: relación`);
+    const signo = c.relacion > 0 ? (fuerte ? "++" : "+") : (fuerte ? "−−" : "−");
+    const clase = c.relacion > 0 ? "sube" : "baja";
+    if (e1.nombre !== e2.nombre) msgs.push(`${e2.emoji} ${quienes} ${FRASE_REL[e2.nombre]} <span class="${clase}">${signo}</span>`);
+    else msgs.push(`${quienes}: <span class="${clase}">relación ${signo}</span>`);
   }
   return msgs;
 }
@@ -123,7 +125,7 @@ function generarCiudad() {
     const base = a.casa === b.casa ? 70 + Math.floor(Math.random() * 16) : 35 + Math.floor(Math.random() * 31);
     relaciones[claveRel(a, b)] = base;
   }));
-  eventos = {}; elegido = null; historial = []; ultimoId = null;
+  eventos = {}; elegido = null; historial = []; filtro = null; ultimoId = null;
   dia = 1; reloj = 0; bloqueado = false;
   planificarDia();
 }
@@ -196,8 +198,9 @@ function textoDe(inst) {
 }
 
 function registrar(inst) {
-  historial.unshift({ texto: inst.textoFijo || textoDe(inst), eleccion: inst.eleccion, nivel: inst.nivel, dia: inst.dia, mensajes: inst.mensajes || [] });
-  historial = historial.slice(0, 10);
+  historial.unshift({ texto: inst.textoFijo || textoDe(inst), eleccion: inst.eleccion, nivel: inst.nivel, dia: inst.dia, mensajes: inst.mensajes || [],
+    ids: [inst.residente.id, inst.otro && inst.otro.id].filter(Boolean), lugares: inst.involucrados });
+  historial = historial.slice(0, 200);
 }
 
 function seleccionar(i) {
@@ -285,10 +288,14 @@ function dibujarEvento() {
   }
 }
 
+const coincideFiltro = (h) => !filtro || (filtro.tipo === "r" ? h.ids.includes(filtro.id) : h.lugares.includes(filtro.id));
+
 function dibujarHistorial() {
   const ul = document.getElementById("historial");
-  if (!historial.length) { ul.innerHTML = `<li class="vacio">Todavía no pasó nada.</li>`; return; }
-  ul.innerHTML = historial.map((h) =>
+  document.getElementById("filtro-activo").textContent = filtro ? `🔻 ${filtro.nombre}` : "";
+  const lista = historial.filter(coincideFiltro).slice(0, filtro ? 30 : 10);
+  if (!lista.length) { ul.innerHTML = `<li class="vacio">${filtro ? `Todavía no pasó nada con ${filtro.nombre}.` : "Todavía no pasó nada."}</li>`; return; }
+  ul.innerHTML = lista.map((h) =>
     `<li class="${h.nivel}"><span class="cuando">Día ${h.dia}</span> ${h.texto}${h.eleccion ? `<br><span class="eleccion">→ ${h.eleccion}</span>` : ""}${h.mensajes.map((m) => `<br><span class="cambio">${m}</span>`).join("")}</li>`
   ).join("");
 }
@@ -328,17 +335,28 @@ function caraPixelada(r) {
 
 const tagsHTML = (tags) => `<div class="tags">${tags.map((t) => `<span class="tag">${t}</span>`).join("")}</div>`;
 
+const EMBUDO = `<svg class="embudo" viewBox="0 0 7 6" shape-rendering="crispEdges" aria-hidden="true"><path d="M0 0h7v1H0zM1 1h5v1H1zM2 2h3v1H2zM3 3h1v3H3z" fill="currentColor"/></svg>`;
+const btnFiltro = (tipo, id, nombre) => `<button class="accion btn-filtro" data-tipo="${tipo}" data-id="${id}" data-nombre="${nombre}" title="Ver solo su historial" aria-label="Ver solo el historial de ${nombre}">${EMBUDO}</button>`;
+const chipRel = (o, v) => `<span class="tag">${o.nombre} ${v} ${etiquetaRel(v).emoji}</span>`;
+
+function relacionesHTML(r) {
+  const ord = todosLosResidentes().filter((o) => o.id !== r.id).map((o) => ({ o, v: getRel(r, o) })).sort((a, b) => b.v - a.v);
+  if (ord.length <= 3) return `<div class="tags">${ord.map((x) => chipRel(x.o, x.v)).join("")}</div>`;
+  const top = ord.slice(0, 2), peor = ord[ord.length - 1], resto = ord.slice(2, -1);
+  return `<p class="vacio rel-titulo">Más queridos</p><div class="tags">${top.map((x) => chipRel(x.o, x.v)).join("")}</div>
+    <p class="vacio rel-titulo">Menos querido</p><div class="tags">${chipRel(peor.o, peor.v)}</div>
+    <details class="mas"><summary>Ver los demás (${resto.length})</summary><div class="tags">${resto.map((x) => chipRel(x.o, x.v)).join("")}</div></details>`;
+}
+
 function mostrarFicha(lugar) {
   const ficha = document.getElementById("ficha");
   const vecinos = VECINOS[lugar.i].map((v) => ciudad[v].nombre).join(", ");
-  let html = `<h2>${lugar.nombre}</h2><p class="vacio">Vecinos: ${vecinos}</p>`;
+  let html = `<div class="cabecera"><h2>${lugar.nombre}</h2>${btnFiltro("l", lugar.i, lugar.nombre)}</div><p class="vacio">Vecinos: ${vecinos}</p>`;
   if (lugar.tipo === "negocio") html += `<p style="margin-top:8px">Características:</p>${tagsHTML(lugar.tags)}`;
   else if (lugar.tipo === "casa") lugar.residentes.forEach((r) => {
-    const rels = todosLosResidentes().filter((o) => o.id !== r.id).map((o) => {
-      const v = getRel(r, o); return `<span class="tag">${o.nombre} ${v} ${etiquetaRel(v).emoji}</span>`; }).join("");
     html += `<div class="residente"><div class="retrato">${caraPixelada(r)}</div><div class="datos">
-      <p><strong>${r.nombre}</strong> (${r.edad})</p>${tagsHTML(r.tags)}
-      <p class="vacio" style="margin-top:8px">Relaciones:</p><div class="tags">${rels}</div></div></div>`; });
+      <p><strong>${r.nombre}</strong> (${r.edad}) ${btnFiltro("r", r.id, r.nombre)}</p>${tagsHTML(r.tags)}
+      <p class="vacio" style="margin-top:8px">Relaciones:</p>${relacionesHTML(r)}</div></div>`; });
   else html += `<p style="margin-top:8px">Acá se cruzan los vecinos de las 4 casas 🗣️</p>`;
   ficha.innerHTML = html;
 }
@@ -361,6 +379,15 @@ setInterval(() => {
     else nuevoDia();
   }
 }, 100);
+
+// ====== FILTRO DEL HISTORIAL ======
+// Cualquier toque limpia el filtro; el embudo lo activa (corre primero la limpieza, después el embudo)
+document.addEventListener("click", (e) => {
+  const b = e.target.closest(".btn-filtro");
+  if (!b) { if (filtro) { filtro = null; dibujarHistorial(); } return; }
+  filtro = { tipo: b.dataset.tipo, id: b.dataset.tipo === "l" ? Number(b.dataset.id) : b.dataset.id, nombre: b.dataset.nombre };
+  dibujarHistorial();
+}, true);
 
 // ====== BOTONES ======
 document.getElementById("nueva").addEventListener("click", () => {
