@@ -33,7 +33,7 @@ const tieneTodo = (tags, requeridos = []) => requeridos.every((t) => tags.includ
 const todosLosResidentes = () => ciudad.filter((l) => l.tipo === "casa").flatMap((l) => l.residentes);
 const esInteres = (t) => (RESIDENTES.intereses || []).includes(t);
 const esPersonalidad = (t) => (RESIDENTES.personalidad || []).includes(t);
-const esNivelado = (t) => esInteres(t) || esPersonalidad(t);   // intereses y personalidad tienen nivel 1-5
+const esNivelado = esInteres;   // solo los intereses/habilidades tienen nivel 1-5; la personalidad son casillas
 const nombreTag = (t) => t.replace(/_/g, " ");
 const NIVEL_MAX = 5;
 const nivelesIniciales = (tags) => Object.fromEntries(tags.filter(esNivelado).map((t) => [t, 1 + Math.floor(Math.random() * 3)]));
@@ -63,12 +63,18 @@ function aplicarConsecuencias(inst, c = {}) {
   const msgs = [];
   const sub = (tags = []) => tags.map((t) => (t === "$interes" ? inst.interes : t));
   const agregar = (quien, tags) => sub(tags).forEach((t) => {
+    if (esPersonalidad(t)) { if (!quien.tags.includes(t)) cambiarRasgo(quien, azar(quien.secundarios), t); return; }
     if (quien.tags.includes(t)) { if (esNivelado(t)) cambiarNivel(quien, [t], 1); return; }   // ya lo tenía: sube de nivel
     quien.tags.push(t);
     if (esNivelado(t)) quien.niveles[t] = 1;
     msgs.push(`✨ Ahora ${conA(quien.nombre, frase(t))}`);
   });
   const quitar = (quien, tags) => sub(tags).forEach((t) => {
+    if (esPersonalidad(t)) {   // la casilla nunca queda vacía: se sortea otro rasgo; el principal no se toca
+      if (!quien.secundarios.includes(t)) return;
+      cambiarRasgo(quien, t, azar(RESIDENTES.personalidad.filter((x) => !quien.tags.includes(x))));
+      return;
+    }
     if (!quien.tags.includes(t)) return;
     quien.tags = quien.tags.filter((x) => x !== t);
     delete quien.niveles[t];
@@ -76,10 +82,14 @@ function aplicarConsecuencias(inst, c = {}) {
     const txt = f.includes("ya no") ? f : f.replace(quien.nombre, quien.nombre + " ya no");
     msgs.push(`💨 ${txt[0].toUpperCase() + txt.slice(1)}`);
   });
+  const cambiarRasgo = (quien, viejo, nuevo) => {
+    quien.tags = quien.tags.map((x) => (x === viejo ? nuevo : x));
+    quien.secundarios = quien.secundarios.map((x) => (x === viejo ? nuevo : x));
+    msgs.push(`🔄 ${quien.nombre} cambió: ${nombreTag(viejo)} → ${nombreTag(nuevo)}`);
+  };
   const cambiarNivel = (quien, tags, delta) => sub(tags).forEach((t) => {
     if (!quien.tags.includes(t)) return;
-    const antes = quien.niveles[t] || 1, despues = Math.min(NIVEL_MAX, antes + delta);
-    if (despues < 1) { quitar(quien, [t]); return; }
+    const antes = quien.niveles[t] || 1, despues = Math.max(1, Math.min(NIVEL_MAX, antes + delta));   // bajar nunca la borra: queda "oxidada" en 1
     if (despues === antes) return;
     quien.niveles[t] = despues;
     msgs.push(`${delta > 0 ? "📈" : "📉"} ${quien.nombre}: ${nombreTag(t)} nivel ${despues}`);
@@ -143,9 +153,11 @@ function generarCiudad() {
     const cantidad = 1 + Math.floor(Math.random() * 3);
     const residentes = [];
     for (let k = 0; k < cantidad; k++) {
-      const tags = mezclar(RESIDENTES.tags).slice(0, 2);
+      const intereses = mezclar(RESIDENTES.intereses).slice(0, 2);
+      const [principal, ...secundarios] = mezclar(RESIDENTES.personalidad).slice(0, 3);   // 1 fijo + 2 que pueden cambiar
       residentes.push({ id: "r" + contador++, nombre: nombres.pop(), edad: azar(RESIDENTES.edades),
-        casa: i, tags, niveles: nivelesIniciales(tags), relaciones: {}, cara: sortearCara() });
+        casa: i, tags: [...intereses, principal, ...secundarios], niveles: nivelesIniciales(intereses),
+        principal, secundarios, relaciones: {}, cara: sortearCara() });
     }
     return { i, tipo, nombre: "Casa de " + residentes[0].nombre, residentes };
   });
@@ -397,20 +409,18 @@ function relacionesHTML(r) {
 const pips = (n) => "■".repeat(n) + "□".repeat(NIVEL_MAX - n);
 const chipInteres = (r, t) => `<span class="tag">${nombreTag(t)} <span class="pips">${pips(r.niveles[t] || 1)}</span></span>`;
 
-function seccionNivelada(r, titulo, lista) {
-  if (!lista.length) return "";
-  const orden = [...lista].sort((x, y) => (r.niveles[y] || 1) - (r.niveles[x] || 1));
-  const top = orden.slice(0, 3), resto = orden.slice(3);
-  let html = `<p class="vacio rel-titulo">${titulo}</p><div class="tags">${top.map((t) => chipInteres(r, t)).join("")}</div>`;
-  if (resto.length) html += `<details class="mas"><summary>Ver los demás (${resto.length})</summary><div class="tags">${resto.map((t) => chipInteres(r, t)).join("")}</div></details>`;
-  return html;
-}
-
 function interesesHTML(r) {
-  const otros = r.tags.filter((t) => !esNivelado(t));
-  return seccionNivelada(r, "Intereses", r.tags.filter(esInteres))
-    + seccionNivelada(r, "Personalidad", r.tags.filter(esPersonalidad))
-    + (otros.length ? `<p class="vacio rel-titulo">Además</p>${tagsHTML(otros)}` : "");
+  const ints = r.tags.filter(esInteres).sort((x, y) => (r.niveles[y] || 1) - (r.niveles[x] || 1));
+  let html = `<p class="vacio rel-titulo">Personalidad</p><div class="tags"><span class="tag principal">⭐ ${nombreTag(r.principal)}</span>${r.secundarios.map((t) => `<span class="tag">${nombreTag(t)}</span>`).join("")}</div>`;
+  if (ints.length <= 3) html += `<p class="vacio rel-titulo">Intereses</p><div class="tags">${ints.map((t) => chipInteres(r, t)).join("")}</div>`;
+  else {
+    const top = ints.slice(0, 2), flojo = ints[ints.length - 1], resto = ints.slice(2, -1);
+    html += `<p class="vacio rel-titulo">Mejores</p><div class="tags">${top.map((t) => chipInteres(r, t)).join("")}</div>
+      <p class="vacio rel-titulo">Más flojo</p><div class="tags">${chipInteres(r, flojo)}</div>`;
+    if (resto.length) html += `<details class="mas"><summary>Ver los demás (${resto.length})</summary><div class="tags">${resto.map((t) => chipInteres(r, t)).join("")}</div></details>`;
+  }
+  const otros = r.tags.filter((t) => !esInteres(t) && !esPersonalidad(t));
+  return html + (otros.length ? `<p class="vacio rel-titulo">Además</p>${tagsHTML(otros)}` : "");
 }
 
 function mostrarFicha(lugar) {

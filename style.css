@@ -113,3 +113,5 @@ button.btn-filtro { padding: 2px 6px; box-shadow: 3px 3px 0 var(--borde); vertic
 details.residente { display: block; border-top: 4px dotted var(--suave); padding-top: 10px; margin-top: 10px; }
 details.residente > summary { cursor: pointer; font-size: 18px; margin-bottom: 8px; }
 details.residente > .cuerpo { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+
+.tag.principal { background: var(--m-amarillo); color: #000; font-weight: 700; }
