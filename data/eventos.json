@@ -7,7 +7,8 @@
       "residente": []
     },
     "texto": "{residente} contó un chiste malísimo 😅",
-    "consecuencias": {}
+    "consecuencias": {},
+    "peso": 0.4
   },
   {
     "id": "cocina_suyo",
@@ -33,7 +34,7 @@
     },
     "texto": "{residente} y {otro} charlaron un rato largo en la plaza.",
     "consecuencias": {
-      "relacion": 8
+      "relacion": 16
     }
   },
   {
@@ -43,11 +44,11 @@
     "requisitos": {
       "residente": [],
       "otro": [],
-      "relacion_min": 60
+      "relacion_min": 20
     },
     "texto": "{residente} y {otro} compartieron unos mates en la plaza 🍵",
     "consecuencias": {
-      "relacion": 5
+      "relacion": 10
     }
   },
   {
@@ -57,11 +58,11 @@
     "requisitos": {
       "residente": [],
       "otro": [],
-      "relacion_max": 25
+      "relacion_max": -50
     },
     "texto": "{residente} cruzó de vereda para no saludar a {otro}.",
     "consecuencias": {
-      "relacion": -3
+      "relacion": -6
     }
   },
   {
@@ -287,13 +288,13 @@
           "otro_agrega": [
             "musica"
           ],
-          "relacion": 20
+          "relacion": 40
         }
       },
       {
         "texto": "Que siga tocando solo",
         "consecuencias": {
-          "relacion": -5
+          "relacion": -10
         }
       }
     ]
@@ -316,13 +317,13 @@
           "otro_agrega": [
             "pesca"
           ],
-          "relacion": 15
+          "relacion": 30
         }
       },
       {
         "texto": "Que le diga que no",
         "consecuencias": {
-          "relacion": -5
+          "relacion": -10
         }
       }
     ]
@@ -334,20 +335,20 @@
     "requisitos": {
       "residente": [],
       "otro": [],
-      "relacion_max": 25
+      "relacion_max": -50
     },
     "texto": "{residente} sigue enojado con {otro} y se lo cruza en la plaza.",
     "opciones": [
       {
         "texto": "Que le pida disculpas",
         "consecuencias": {
-          "relacion": 25
+          "relacion": 50
         }
       },
       {
         "texto": "Que lo ignore",
         "consecuencias": {
-          "relacion": -5
+          "relacion": -10
         }
       }
     ]
@@ -430,13 +431,13 @@
       {
         "texto": "Separarlos",
         "consecuencias": {
-          "relacion": -10
+          "relacion": -20
         }
       },
       {
         "texto": "Dejar que se arreglen solos",
         "consecuencias": {
-          "relacion": -30,
+          "relacion": -60,
           "otro_agrega": [
             "gruñon"
           ]
@@ -738,7 +739,7 @@
     },
     "texto": "{residente} le regaló un frasco de mermelada casera a {otro} en la plaza 🍓",
     "consecuencias": {
-      "relacion": 10
+      "relacion": 20
     }
   },
   {
@@ -756,7 +757,7 @@
       {
         "texto": "¡Que haga un recital!",
         "consecuencias": {
-          "relacion": 15,
+          "relacion": 30,
           "otro_agrega": [
             "musica"
           ]
@@ -765,7 +766,7 @@
       {
         "texto": "Que la guarde, da miedito",
         "consecuencias": {
-          "relacion": -5
+          "relacion": -10
         }
       }
     ]
@@ -782,7 +783,395 @@
     },
     "texto": "{residente} le cuenta a {otro} su truco de pescar con fruta de la huerta 🍎🎣",
     "consecuencias": {
-      "relacion": 6
+      "relacion": 12
     }
+  },
+  {
+    "id": "practica",
+    "nivel": "amarillo",
+    "lugar": "casa",
+    "requisitos": {
+      "residente": [],
+      "interes": {
+        "nivel_max": 4
+      }
+    },
+    "texto": "{residente} tiene ganas de dedicarle la tarde a {interes}.",
+    "opciones": [
+      {
+        "texto": "¡A practicar!",
+        "consecuencias": {
+          "residente_sube": [
+            "$interes"
+          ]
+        }
+      },
+      {
+        "texto": "Hoy no, flojera",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "se_enfria",
+    "nivel": "verde",
+    "lugar": "casa",
+    "requisitos": {
+      "residente": [],
+      "interes": {
+        "nivel_min": 3
+      }
+    },
+    "texto": "{residente} dejó de lado {interes} por un tiempo y se oxidó un poco.",
+    "peso": 0.5,
+    "consecuencias": {
+      "residente_baja": [
+        "$interes"
+      ]
+    }
+  },
+  {
+    "id": "clases_plaza",
+    "nivel": "amarillo",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [],
+      "interes": {
+        "nivel_min": 4
+      },
+      "otro": [],
+      "otro_sin": [
+        "$interes"
+      ]
+    },
+    "texto": "{residente} sabe un montón de {interes} y le ofrece enseñarle a {otro}.",
+    "opciones": [
+      {
+        "texto": "¡Clases gratis!",
+        "consecuencias": {
+          "otro_agrega": [
+            "$interes"
+          ],
+          "relacion": 30
+        }
+      },
+      {
+        "texto": "No tengo paciencia hoy",
+        "consecuencias": {
+          "relacion": -10
+        }
+      }
+    ]
+  },
+  {
+    "id": "rivalidad",
+    "nivel": "amarillo",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [],
+      "interes": {
+        "nivel_min": 3
+      },
+      "otro": [
+        "$interes"
+      ],
+      "otro_nivel_min": 3
+    },
+    "texto": "{residente} y {otro} discuten a ver quién sabe más de {interes}.",
+    "opciones": [
+      {
+        "texto": "Que hagan un torneo amistoso",
+        "consecuencias": {
+          "relacion": 20,
+          "residente_sube": [
+            "$interes"
+          ],
+          "otro_sube": [
+            "$interes"
+          ]
+        }
+      },
+      {
+        "texto": "Que se piquen nomás",
+        "consecuencias": {
+          "relacion": -40
+        }
+      }
+    ]
+  },
+  {
+    "id": "palestra_desafio",
+    "nivel": "amarillo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [],
+      "interes": {
+        "tags": [
+          "escalada"
+        ],
+        "nivel_min": 4
+      },
+      "negocio": [
+        "escalada"
+      ]
+    },
+    "texto": "{residente} se anima a una vía nueva en la {negocio}.",
+    "opciones": [
+      {
+        "texto": "¡A lo grande!",
+        "consecuencias": {
+          "residente_sube": [
+            "$interes"
+          ]
+        }
+      },
+      {
+        "texto": "Con cuerda doble, por las dudas",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "chisme",
+    "nivel": "amarillo",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [
+        "le_gusta_hablar"
+      ],
+      "otro": []
+    },
+    "texto": "A {residente} se le escapó un secreto de {otro} frente a media plaza.",
+    "opciones": [
+      {
+        "texto": "Pedir perdón enseguida",
+        "consecuencias": {
+          "relacion": -10
+        }
+      },
+      {
+        "texto": "Hacerse el distraído",
+        "consecuencias": {
+          "relacion": -50
+        }
+      }
+    ]
+  },
+  {
+    "id": "tregua",
+    "nivel": "amarillo",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [],
+      "otro": [],
+      "relacion_max": -40
+    },
+    "texto": "{residente} y {otro} se cruzan con cara de pocos amigos. Alguien propone una tregua.",
+    "opciones": [
+      {
+        "texto": "¡Que hagan las paces!",
+        "consecuencias": {
+          "relacion": 50
+        }
+      },
+      {
+        "texto": "Que sigan enojados",
+        "consecuencias": {
+          "relacion": -20
+        }
+      }
+    ]
+  },
+  {
+    "id": "enemistad",
+    "nivel": "rojo",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [],
+      "otro": [],
+      "relacion_max": -70
+    },
+    "texto": "{residente} y {otro} dejaron de hablarse por completo. Todo el barrio lo nota.",
+    "opciones": [
+      {
+        "texto": "Que alguien medie",
+        "consecuencias": {
+          "relacion": 40
+        }
+      },
+      {
+        "texto": "Dejar que se enfríe solo",
+        "consecuencias": {
+          "relacion": -10
+        }
+      }
+    ]
+  },
+  {
+    "id": "grito_plaza",
+    "nivel": "rojo",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [
+        "gruñon"
+      ],
+      "otro": [],
+      "relacion_max": -20
+    },
+    "texto": "{residente} le gritó a {otro} delante de todos.",
+    "opciones": [
+      {
+        "texto": "Que pida perdón",
+        "consecuencias": {
+          "relacion": 20
+        }
+      },
+      {
+        "texto": "Que siga gritando",
+        "consecuencias": {
+          "relacion": -60
+        }
+      }
+    ]
+  },
+  {
+    "id": "se_presentan",
+    "nivel": "verde",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [],
+      "otro": [],
+      "relacion_min": -10,
+      "relacion_max": 10
+    },
+    "texto": "{residente} y {otro} se presentaron. Casi no se conocían.",
+    "consecuencias": {
+      "relacion": 10
+    }
+  },
+  {
+    "id": "planes_finde",
+    "nivel": "verde",
+    "lugar": "plaza",
+    "requisitos": {
+      "residente": [],
+      "otro": [],
+      "relacion_min": 40
+    },
+    "texto": "{residente} y {otro} hicieron planes para el finde.",
+    "consecuencias": {
+      "relacion": 10
+    }
+  },
+  {
+    "id": "llaves",
+    "nivel": "verde",
+    "lugar": "casa",
+    "requisitos": {
+      "residente": []
+    },
+    "texto": "{residente} pasó media hora buscando las llaves. Estaban en su mano.",
+    "consecuencias": {}
+  },
+  {
+    "id": "planta_muerta",
+    "nivel": "verde",
+    "lugar": "casa",
+    "requisitos": {
+      "residente": []
+    },
+    "texto": "{residente} regó una planta que ya estaba muerta 🪴",
+    "consecuencias": {}
+  },
+  {
+    "id": "siesta",
+    "nivel": "verde",
+    "lugar": "casa",
+    "requisitos": {
+      "residente": []
+    },
+    "texto": "{residente} se durmió viendo la tele 📺",
+    "consecuencias": {}
+  },
+  {
+    "id": "mural",
+    "nivel": "verde",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [],
+      "negocio": [
+        "abandonado"
+      ],
+      "negocio_sin": [
+        "arte"
+      ]
+    },
+    "texto": "Alguien pintó un mural en el {negocio}. {residente} se quedó mirándolo un buen rato.",
+    "consecuencias": {
+      "negocio_agrega": [
+        "arte"
+      ]
+    }
+  },
+  {
+    "id": "reconstruir",
+    "nivel": "amarillo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [],
+      "negocio": [
+        "chamuscado"
+      ]
+    },
+    "texto": "{residente} mira las ruinas y ve un montón de ladrillos buenos entre los escombros.",
+    "opciones": [
+      {
+        "texto": "Reconstruir entre todos",
+        "consecuencias": {
+          "residente_agrega": [
+            "generoso"
+          ],
+          "negocio_transforma": {
+            "nombre": "Mercadito del barrio",
+            "tags": [
+              "comida",
+              "comercio"
+            ]
+          }
+        }
+      },
+      {
+        "texto": "Mejor dejarlo así",
+        "consecuencias": {}
+      }
+    ]
+  },
+  {
+    "id": "arreglar_cartel",
+    "nivel": "amarillo",
+    "lugar": "vecino",
+    "requisitos": {
+      "residente": [
+        "inventor"
+      ],
+      "negocio": [
+        "herramientas"
+      ]
+    },
+    "texto": "{residente} se ofrece a arreglar el cartel del {negocio}.",
+    "opciones": [
+      {
+        "texto": "Que lo arregle",
+        "consecuencias": {
+          "residente_agrega": [
+            "generoso"
+          ]
+        }
+      },
+      {
+        "texto": "Mejor un profesional",
+        "consecuencias": {}
+      }
+    ]
   }
 ]

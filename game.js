@@ -17,7 +17,7 @@ const VECINOS = { 0: [1, 3], 1: [0, 2], 2: [1, 5], 3: [0, 6], 4: [1, 3, 5, 7], 5
 
 // ====== ESTADO ======
 let ciudad = [];
-let relaciones = {};  // "r1|r3" -> 0 a 100
+let relaciones = {};  // "r1|r3" -> -100 a 100 (0 = recién conocidos)
 let eventos = {};      // lugar -> evento activo { ev, nivel, estado: "nuevo" | "visto" | "resuelto", ... }
 let elegido = null;
 let historial = [];
@@ -31,19 +31,26 @@ const azar = (lista) => lista[Math.floor(Math.random() * lista.length)];
 const mezclar = (lista) => [...lista].sort(() => Math.random() - 0.5);
 const tieneTodo = (tags, requeridos = []) => requeridos.every((t) => tags.includes(t));
 const todosLosResidentes = () => ciudad.filter((l) => l.tipo === "casa").flatMap((l) => l.residentes);
+const esInteres = (t) => (RESIDENTES.intereses || []).includes(t);
+const nombreTag = (t) => t.replace(/_/g, " ");
+const NIVEL_MAX = 5;
+const nivelesIniciales = (tags) => Object.fromEntries(tags.filter(esInteres).map((t) => [t, 1 + Math.floor(Math.random() * 3)]));
 const ocupado = (i) => eventos[i] && eventos[i].estado === "nuevo";
 
 // ====== RELACIONES ======
 const claveRel = (a, b) => [a.id, b.id].sort().join("|");
-const getRel = (a, b) => relaciones[claveRel(a, b)] ?? 50;
+const getRel = (a, b) => relaciones[claveRel(a, b)] ?? 0;
 function etiquetaRel(v) {
-  if (v < 20) return { nombre: "peleados", emoji: "😠" };
-  if (v < 40) return { nombre: "tensos", emoji: "😒" };
-  if (v < 60) return { nombre: "conocidos", emoji: "🙂" };
-  if (v < 80) return { nombre: "amigos", emoji: "💚" };
+  if (v <= -60) return { nombre: "enemigos", emoji: "🤬" };
+  if (v <= -30) return { nombre: "peleados", emoji: "😠" };
+  if (v < -10) return { nombre: "tensos", emoji: "😒" };
+  if (v <= 10) return { nombre: "recién conocidos", emoji: "👋" };
+  if (v < 40) return { nombre: "conocidos", emoji: "🙂" };
+  if (v < 70) return { nombre: "amigos", emoji: "💚" };
   return { nombre: "inseparables", emoji: "💞" };
 }
-const FRASE_REL = { peleados: "ahora están peleados", tensos: "ahora están tensos", conocidos: "ahora se llevan normal",
+const FRASE_REL = { enemigos: "ahora son enemigos", peleados: "ahora están peleados", tensos: "ahora están tensos",
+  "recién conocidos": "vuelven a ser casi desconocidos", conocidos: "ahora se llevan normal",
   amigos: "ahora son amigos", inseparables: "ahora son inseparables" };
 
 // ====== CONSECUENCIAS ======
@@ -52,21 +59,37 @@ const conA = (nombre, f) => (f.startsWith("le ") ? `a ${nombre} ${f}` : `${nombr
 
 function aplicarConsecuencias(inst, c = {}) {
   const msgs = [];
-  const agregar = (quien, tags = []) => tags.forEach((t) => {
+  const sub = (tags = []) => tags.map((t) => (t === "$interes" ? inst.interes : t));
+  const agregar = (quien, tags) => sub(tags).forEach((t) => {
     if (quien.tags.includes(t)) return;
     quien.tags.push(t);
+    if (esInteres(t)) quien.niveles[t] = 1;
     msgs.push(`✨ Ahora ${conA(quien.nombre, frase(t))}`);
   });
-  const quitar = (quien, tags = []) => tags.forEach((t) => {
+  const quitar = (quien, tags) => sub(tags).forEach((t) => {
     if (!quien.tags.includes(t)) return;
     quien.tags = quien.tags.filter((x) => x !== t);
+    delete quien.niveles[t];
     const f = conA(quien.nombre, frase(t)).replace(" le ", " ya no le ");
     const txt = f.includes("ya no") ? f : f.replace(quien.nombre, quien.nombre + " ya no");
     msgs.push(`💨 ${txt[0].toUpperCase() + txt.slice(1)}`);
   });
+  const cambiarNivel = (quien, tags, delta) => sub(tags).forEach((t) => {
+    if (!quien.tags.includes(t)) return;
+    const antes = quien.niveles[t] || 1, despues = Math.min(NIVEL_MAX, antes + delta);
+    if (despues < 1) { quitar(quien, [t]); return; }
+    if (despues === antes) return;
+    quien.niveles[t] = despues;
+    msgs.push(`${delta > 0 ? "📈" : "📉"} ${quien.nombre}: ${nombreTag(t)} nivel ${despues}`);
+  });
   agregar(inst.residente, c.residente_agrega);
   quitar(inst.residente, c.residente_quita);
-  if (inst.otro) { agregar(inst.otro, c.otro_agrega); quitar(inst.otro, c.otro_quita); }
+  cambiarNivel(inst.residente, c.residente_sube, 1);
+  cambiarNivel(inst.residente, c.residente_baja, -1);
+  if (inst.otro) {
+    agregar(inst.otro, c.otro_agrega); quitar(inst.otro, c.otro_quita);
+    cambiarNivel(inst.otro, c.otro_sube, 1); cambiarNivel(inst.otro, c.otro_baja, -1);
+  }
   if (inst.negocio) {
     (c.negocio_agrega || []).forEach((t) => {
       if (inst.negocio.tags.includes(t)) return;
@@ -83,11 +106,11 @@ function aplicarConsecuencias(inst, c = {}) {
   }
   if (c.relacion && inst.otro) {
     const antes = getRel(inst.residente, inst.otro);
-    const despues = Math.max(0, Math.min(100, antes + c.relacion));
+    const despues = Math.max(-100, Math.min(100, antes + c.relacion));
     relaciones[claveRel(inst.residente, inst.otro)] = despues;
     const e1 = etiquetaRel(antes), e2 = etiquetaRel(despues);
     const quienes = `${inst.residente.nombre} y ${inst.otro.nombre}`;
-    const fuerte = Math.abs(despues - antes) >= 15;
+    const fuerte = Math.abs(despues - antes) >= 30;
     const signo = c.relacion > 0 ? (fuerte ? "++" : "+") : (fuerte ? "−−" : "−");
     const clase = c.relacion > 0 ? "sube" : "baja";
     if (e1.nombre !== e2.nombre) msgs.push(`${e2.emoji} ${quienes} ${FRASE_REL[e2.nombre]} <span class="${clase}">${signo}</span>`);
@@ -96,11 +119,16 @@ function aplicarConsecuencias(inst, c = {}) {
   return msgs;
 }
 
+// Primero se sortea el EVENTO (según nivel y su "peso" opcional), después una combinación válida de ese evento.
+// Así un evento sin requisitos no le gana a los demás solo por tener más combinaciones.
 function azarPesado(lista) {
-  const total = lista.reduce((s, p) => s + PESOS[p.ev.nivel], 0);
-  let n = Math.random() * total;
-  for (const p of lista) { n -= PESOS[p.ev.nivel]; if (n <= 0) return p; }
-  return lista[lista.length - 1];
+  const porEvento = {};
+  lista.forEach((p) => (porEvento[p.ev.id] ||= []).push(p));
+  const grupos = Object.values(porEvento);
+  const peso = (g) => PESOS[g[0].ev.nivel] * (g[0].ev.peso ?? 1);
+  let n = Math.random() * grupos.reduce((t, g) => t + peso(g), 0);
+  for (const g of grupos) { n -= peso(g); if (n <= 0) return azar(g); }
+  return azar(grupos[grupos.length - 1]);
 }
 
 function generarCiudad() {
@@ -113,8 +141,9 @@ function generarCiudad() {
     const cantidad = 1 + Math.floor(Math.random() * 3);
     const residentes = [];
     for (let k = 0; k < cantidad; k++) {
+      const tags = mezclar(RESIDENTES.tags).slice(0, 2);
       residentes.push({ id: "r" + contador++, nombre: nombres.pop(), edad: azar(RESIDENTES.edades),
-        casa: i, tags: mezclar(RESIDENTES.tags).slice(0, 2), relaciones: {}, cara: sortearCara() });
+        casa: i, tags, niveles: nivelesIniciales(tags), relaciones: {}, cara: sortearCara() });
     }
     return { i, tipo, nombre: "Casa de " + residentes[0].nombre, residentes };
   });
@@ -122,7 +151,7 @@ function generarCiudad() {
   relaciones = {};
   const todos = todosLosResidentes();
   todos.forEach((a, x) => todos.slice(x + 1).forEach((b) => {
-    const base = a.casa === b.casa ? 70 + Math.floor(Math.random() * 16) : 35 + Math.floor(Math.random() * 31);
+    const base = a.casa === b.casa ? 40 + Math.floor(Math.random() * 31) : -25 + Math.floor(Math.random() * 51);
     relaciones[claveRel(a, b)] = base;
   }));
   eventos = {}; elegido = null; historial = []; filtro = null; ultimoId = null;
@@ -131,33 +160,47 @@ function generarCiudad() {
 }
 
 // ====== MOTOR DE EVENTOS ======
+const nivelesOk = (r, minimos = {}) => Object.entries(minimos).every(([t, n]) => (r.niveles[t] || 0) >= n);
+const interesesValidos = (r, cfg) => r.tags.filter((t) => esInteres(t) && (!cfg.tags || cfg.tags.includes(t))
+  && (r.niveles[t] || 1) >= (cfg.nivel_min || 1) && (r.niveles[t] || 1) <= (cfg.nivel_max || NIVEL_MAX));
+
 function posiblesEventos() {
   const posibles = [];
   const residentes = todosLosResidentes();
   EVENTOS.forEach((ev) => {
     if (ev.id === ultimoId) return;
+    const req = ev.requisitos;
     residentes.forEach((r) => {
-      if (!tieneTodo(r.tags, ev.requisitos.residente)) return;
-      if ((ev.requisitos.residente_sin || []).some((t) => r.tags.includes(t))) return;
-      if (ev.lugar === "casa") {
-        if (!ocupado(r.casa)) posibles.push({ ev, residente: r, lugar: r.casa, involucrados: [r.casa] });
-      } else if (ev.lugar === "vecino") {
-        VECINOS[r.casa].forEach((v) => {
-          const neg = ciudad[v];
-          if (!ocupado(v) && tieneTodo(neg.tags, ev.requisitos.negocio))
-            posibles.push({ ev, residente: r, negocio: neg, lugar: v, involucrados: [r.casa, v] });
-        });
-      } else if (ev.lugar === "plaza") {
-        if (ocupado(4)) return;
-        residentes.forEach((o) => {
-          const rel = getRel(r, o);
-          const req = ev.requisitos;
-          if (req.relacion_min != null && rel < req.relacion_min) return;
-          if (req.relacion_max != null && rel > req.relacion_max) return;
-          if (o.casa !== r.casa && tieneTodo(o.tags, req.otro))
-            posibles.push({ ev, residente: r, otro: o, lugar: 4, involucrados: [4, r.casa, o.casa] });
-        });
-      }
+      if (!tieneTodo(r.tags, req.residente)) return;
+      if ((req.residente_sin || []).some((t) => r.tags.includes(t))) return;
+      if (!nivelesOk(r, req.nivel_min)) return;
+      // si el evento habla de un interés, hay una variante por cada interés válido del residente
+      const variantes = req.interes ? interesesValidos(r, req.interes).map((t) => ({ interes: t })) : [{}];
+      variantes.forEach((v) => {
+        const sub = (tags = []) => tags.map((t) => (t === "$interes" ? v.interes : t));
+        if (ev.lugar === "casa") {
+          if (!ocupado(r.casa)) posibles.push({ ev, residente: r, ...v, lugar: r.casa, involucrados: [r.casa] });
+        } else if (ev.lugar === "vecino") {
+          VECINOS[r.casa].forEach((n) => {
+            const neg = ciudad[n];
+            if (ocupado(n) || !tieneTodo(neg.tags, req.negocio)) return;
+            if ((req.negocio_sin || []).some((t) => neg.tags.includes(t))) return;
+            posibles.push({ ev, residente: r, ...v, negocio: neg, lugar: n, involucrados: [r.casa, n] });
+          });
+        } else if (ev.lugar === "plaza") {
+          if (ocupado(4)) return;
+          residentes.forEach((o) => {
+            const rel = getRel(r, o);
+            if (o.casa === r.casa) return;
+            if (req.relacion_min != null && rel < req.relacion_min) return;
+            if (req.relacion_max != null && rel > req.relacion_max) return;
+            if (!tieneTodo(o.tags, sub(req.otro))) return;
+            if (sub(req.otro_sin).some((t) => o.tags.includes(t))) return;
+            if (req.otro_nivel_min != null && v.interes && (o.niveles[v.interes] || 0) < req.otro_nivel_min) return;
+            posibles.push({ ev, residente: r, ...v, otro: o, lugar: 4, involucrados: [4, r.casa, o.casa] });
+          });
+        }
+      });
     });
   });
   return posibles;
@@ -194,7 +237,8 @@ function textoDe(inst) {
   return inst.ev.texto
     .replace("{residente}", `<strong>${inst.residente.nombre}</strong>`)
     .replace("{otro}", inst.otro ? `<strong>${inst.otro.nombre}</strong>` : "")
-    .replace("{negocio}", inst.negocio ? inst.negocio.nombre : "");
+    .replace("{negocio}", inst.negocio ? inst.negocio.nombre : "")
+    .replace("{interes}", inst.interes ? nombreTag(inst.interes) : "");
 }
 
 function registrar(inst) {
@@ -348,6 +392,22 @@ function relacionesHTML(r) {
     <details class="mas"><summary>Ver los demás (${resto.length})</summary><div class="tags">${resto.map((x) => chipRel(x.o, x.v)).join("")}</div></details>`;
 }
 
+const pips = (n) => "■".repeat(n) + "□".repeat(NIVEL_MAX - n);
+const chipInteres = (r, t) => `<span class="tag">${nombreTag(t)} <span class="pips">${pips(r.niveles[t] || 1)}</span></span>`;
+
+function interesesHTML(r) {
+  const ints = r.tags.filter(esInteres).sort((a, b) => (r.niveles[b] || 1) - (r.niveles[a] || 1));
+  const rasgos = r.tags.filter((t) => !esInteres(t));
+  let html = "";
+  if (ints.length) {
+    const top = ints.slice(0, 3), resto = ints.slice(3);
+    html += `<p class="vacio rel-titulo">Intereses</p><div class="tags">${top.map((t) => chipInteres(r, t)).join("")}</div>`;
+    if (resto.length) html += `<details class="mas"><summary>Ver los demás (${resto.length})</summary><div class="tags">${resto.map((t) => chipInteres(r, t)).join("")}</div></details>`;
+  }
+  if (rasgos.length) html += `<p class="vacio rel-titulo">Rasgos</p>${tagsHTML(rasgos)}`;
+  return html;
+}
+
 function mostrarFicha(lugar) {
   const ficha = document.getElementById("ficha");
   const vecinos = VECINOS[lugar.i].map((v) => ciudad[v].nombre).join(", ");
@@ -355,7 +415,7 @@ function mostrarFicha(lugar) {
   if (lugar.tipo === "negocio") html += `<p style="margin-top:8px">Características:</p>${tagsHTML(lugar.tags)}`;
   else if (lugar.tipo === "casa") lugar.residentes.forEach((r) => {
     html += `<div class="residente"><div class="retrato">${caraPixelada(r)}</div><div class="datos">
-      <p><strong>${r.nombre}</strong> (${r.edad}) ${btnFiltro("r", r.id, r.nombre)}</p>${tagsHTML(r.tags)}
+      <p><strong>${r.nombre}</strong> (${r.edad}) ${btnFiltro("r", r.id, r.nombre)}</p>${interesesHTML(r)}
       <p class="vacio" style="margin-top:8px">Relaciones:</p>${relacionesHTML(r)}</div></div>`; });
   else html += `<p style="margin-top:8px">Acá se cruzan los vecinos de las 4 casas 🗣️</p>`;
   ficha.innerHTML = html;
