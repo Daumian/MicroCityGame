@@ -136,6 +136,7 @@ function posiblesEventos() {
     if (ev.id === ultimoId) return;
     residentes.forEach((r) => {
       if (!tieneTodo(r.tags, ev.requisitos.residente)) return;
+      if ((ev.requisitos.residente_sin || []).some((t) => r.tags.includes(t))) return;
       if (ev.lugar === "casa") {
         if (!ocupado(r.casa)) posibles.push({ ev, residente: r, lugar: r.casa, involucrados: [r.casa] });
       } else if (ev.lugar === "vecino") {
