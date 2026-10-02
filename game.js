@@ -5,6 +5,10 @@ let NEGOCIOS = [], RESIDENTES = {}, EVENTOS = [], FRASE_TAG = {};
 const DURACION_DIA = 12;                 // segundos reales que dura un día
 const EVENTOS_POR_DIA = [2, 4];          // mínimo y máximo
 const PESOS = { verde: 5, amarillo: 3, rojo: 1 };
+// Presupuesto de puntos: cada persona reparte hasta este tope entre todos sus intereses (suma de niveles)
+const PUNTOS_INICIO = 10;        // tope el día 1
+const PUNTOS_CADA_DIAS = 10;     // cada cuántos días sube 1
+const PUNTOS_MAX = 20;           // tope máximo, igual para todos
 const pendientes = () => Object.values(eventos).filter((e) => e.estado === "nuevo").length;
 const NOMBRE_NIVEL = { verde: "Casual", amarillo: "Importante", rojo: "Urgente", gris: "Visto" };
 
@@ -36,6 +40,8 @@ const esPersonalidad = (t) => (RESIDENTES.personalidad || []).includes(t);
 const esNivelado = esInteres;   // solo los intereses/habilidades tienen nivel 1-5; la personalidad son casillas
 const nombreTag = (t) => t.replace(/_/g, " ");
 const NIVEL_MAX = 5;
+const topePuntos = () => Math.min(PUNTOS_MAX, PUNTOS_INICIO + Math.floor((dia - 1) / PUNTOS_CADA_DIAS));
+const puntosDe = (r) => Object.values(r.niveles).reduce((a, b) => a + b, 0);
 const nivelesIniciales = (tags) => Object.fromEntries(tags.filter(esNivelado).map((t) => [t, 1 + Math.floor(Math.random() * 3)]));
 const ocupado = (i) => eventos[i] && eventos[i].estado === "nuevo";
 
@@ -61,12 +67,13 @@ const conA = (nombre, f) => (f.startsWith("le ") ? `a ${nombre} ${f}` : `${nombr
 
 function aplicarConsecuencias(inst, c = {}) {
   const msgs = [];
+  const foco = new Map();   // quién subió qué interés (para equilibrar el presupuesto de puntos)
   const sub = (tags = []) => tags.map((t) => (t === "$interes" ? inst.interes : t));
   const agregar = (quien, tags) => sub(tags).forEach((t) => {
     if (esPersonalidad(t)) { if (!quien.tags.includes(t)) cambiarRasgo(quien, azar(quien.secundarios), t); return; }
     if (quien.tags.includes(t)) { if (esNivelado(t)) cambiarNivel(quien, [t], 1); return; }   // ya lo tenía: sube de nivel
     quien.tags.push(t);
-    if (esNivelado(t)) quien.niveles[t] = 1;
+    if (esNivelado(t)) { quien.niveles[t] = 1; foco.set(quien, t); }
     msgs.push(`✨ Ahora ${conA(quien.nombre, frase(t))}`);
   });
   const quitar = (quien, tags) => sub(tags).forEach((t) => {
@@ -87,13 +94,31 @@ function aplicarConsecuencias(inst, c = {}) {
     quien.secundarios = quien.secundarios.map((x) => (x === viejo ? nuevo : x));
     msgs.push(`🔄 ${quien.nombre} cambió: ${nombreTag(viejo)} → ${nombreTag(nuevo)}`);
   };
+  const olvidar = (quien, t, por) => {
+    quien.tags = quien.tags.filter((x) => x !== t);
+    delete quien.niveles[t];
+    msgs.push(`📉 ${quien.nombre} se olvidó de ${nombreTag(t)}${por ? ` por dedicarse a ${nombreTag(por)}` : ""}`);
+  };
   const cambiarNivel = (quien, tags, delta) => sub(tags).forEach((t) => {
     if (!quien.tags.includes(t)) return;
-    const antes = quien.niveles[t] || 1, despues = Math.max(1, Math.min(NIVEL_MAX, antes + delta));   // bajar nunca la borra: queda "oxidada" en 1
+    const antes = quien.niveles[t] || 1, despues = Math.min(NIVEL_MAX, antes + delta);
+    if (despues < 1) { olvidar(quien, t); return; }   // bajar de nivel 1 la borra
     if (despues === antes) return;
     quien.niveles[t] = despues;
+    if (delta > 0) foco.set(quien, t);
     msgs.push(`${delta > 0 ? "📈" : "📉"} ${quien.nombre}: ${nombreTag(t)} nivel ${despues}`);
   });
+  // si se pasó del tope, baja el interés más flojo (menos el que acaba de subir); si llega a 0, se borra
+  const equilibrar = (quien, enfoque) => {
+    while (puntosDe(quien) > topePuntos()) {
+      const otros = Object.keys(quien.niveles).filter((t) => t !== enfoque);
+      if (!otros.length) return;
+      const min = Math.min(...otros.map((t) => quien.niveles[t]));
+      const t = azar(otros.filter((x) => quien.niveles[x] === min));
+      if (min <= 1) olvidar(quien, t, enfoque);
+      else { quien.niveles[t]--; msgs.push(`📉 ${quien.nombre}: ${nombreTag(t)} nivel ${quien.niveles[t]}`); }
+    }
+  };
   agregar(inst.residente, c.residente_agrega);
   quitar(inst.residente, c.residente_quita);
   cambiarNivel(inst.residente, c.residente_sube, 1);
@@ -102,6 +127,7 @@ function aplicarConsecuencias(inst, c = {}) {
     agregar(inst.otro, c.otro_agrega); quitar(inst.otro, c.otro_quita);
     cambiarNivel(inst.otro, c.otro_sube, 1); cambiarNivel(inst.otro, c.otro_baja, -1);
   }
+  foco.forEach((t, quien) => equilibrar(quien, t));
   if (inst.negocio) {
     (c.negocio_agrega || []).forEach((t) => {
       if (inst.negocio.tags.includes(t)) return;
@@ -412,10 +438,11 @@ const chipInteres = (r, t) => `<span class="tag">${nombreTag(t)} <span class="pi
 function interesesHTML(r) {
   const ints = r.tags.filter(esInteres).sort((x, y) => (r.niveles[y] || 1) - (r.niveles[x] || 1));
   let html = `<p class="vacio rel-titulo">Personalidad</p><div class="tags"><span class="tag principal">⭐ ${nombreTag(r.principal)}</span>${r.secundarios.map((t) => `<span class="tag">${nombreTag(t)}</span>`).join("")}</div>`;
-  if (ints.length <= 3) html += `<p class="vacio rel-titulo">Intereses</p><div class="tags">${ints.map((t) => chipInteres(r, t)).join("")}</div>`;
+  const puntos = `<span class="puntos">· puntos ${puntosDe(r)}/${topePuntos()}</span>`;
+  if (ints.length <= 3) html += `<p class="vacio rel-titulo">Intereses ${puntos}</p><div class="tags">${ints.map((t) => chipInteres(r, t)).join("")}</div>`;
   else {
     const top = ints.slice(0, 2), flojo = ints[ints.length - 1], resto = ints.slice(2, -1);
-    html += `<p class="vacio rel-titulo">Mejores</p><div class="tags">${top.map((t) => chipInteres(r, t)).join("")}</div>
+    html += `<p class="vacio rel-titulo">Mejores ${puntos}</p><div class="tags">${top.map((t) => chipInteres(r, t)).join("")}</div>
       <p class="vacio rel-titulo">Más flojo</p><div class="tags">${chipInteres(r, flojo)}</div>`;
     if (resto.length) html += `<details class="mas"><summary>Ver los demás (${resto.length})</summary><div class="tags">${resto.map((t) => chipInteres(r, t)).join("")}</div></details>`;
   }
