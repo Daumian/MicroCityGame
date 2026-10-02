@@ -115,3 +115,5 @@ details.residente > summary { cursor: pointer; font-size: 18px; margin-bottom: 8
 details.residente > .cuerpo { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
 
 .tag.principal { background: var(--m-amarillo); color: #000; font-weight: 700; }
+
+.puntos { color: var(--suave); }
